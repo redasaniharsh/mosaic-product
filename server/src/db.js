@@ -1,9 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToF } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToF(import.meta.url));
 const dataDir = path.resolve(process.env.DB_DIR || path.join(__dirname, '..', 'data'));
 fs.mkdirSync(dataDir, { recursive: true });
 
@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS products (
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   form TEXT NOT NULL,
+  tagline TEXT,
   accent TEXT,
   price REAL,
   rating REAL,
@@ -83,6 +84,18 @@ CREATE TABLE IF NOT EXISTS products (
   category TEXT,
   gender TEXT,
   season TEXT,
+  mrp REAL,
+  size TEXT,
+  actives TEXT,
+  concerns TEXT,
+  step TEXT,
+  time_of_day TEXT,
+  cadence TEXT,
+  instructions TEXT,
+  cautions TEXT,
+  reviews TEXT,
+  evidence TEXT,
+  image TEXT,
   is_active INTEGER DEFAULT 1,
   sort_order INTEGER DEFAULT 0,
   created_at TEXT NOT NULL
@@ -115,13 +128,11 @@ CREATE INDEX IF NOT EXISTS idx_photos_user ON photos(user_id, date);
 `);
 
 function migrateProductsTable() {
-  // SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we try and ignore errors if column exists
   try {
     const stmt = db.prepare('ALTER TABLE products ADD COLUMN image TEXT');
     stmt.run();
     console.log('Products table migration: image column added');
   } catch (e) {
-    // Column may already exist - that's fine
     console.log('Products table: image column already exists or migration skipped');
   }
   try {
@@ -129,12 +140,95 @@ function migrateProductsTable() {
     stmt.run();
     console.log('Products table migration: slug column added');
   } catch (e) {
-    // Column may already exist - that's fine
     console.log('Products table: slug column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN tagline TEXT');
+    stmt.run();
+    console.log('Products table migration: tagline column added');
+  } catch (e) {
+    console.log('Products table: tagline column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN mrp REAL');
+    stmt.run();
+    console.log('Products table migration: mrp column added');
+  } catch (e) {
+    console.log('Products table: mrp column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN size TEXT');
+    stmt.run();
+    console.log('Products table migration: size column added');
+  } catch (e) {
+    console.log('Products table: size column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN actives TEXT');
+    stmt.run();
+    console.log('Products table migration: actives column added');
+  } catch (e) {
+    console.log('Products table: actives column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN concerns TEXT');
+    stmt.run();
+    console.log('Products table migration: concerns column added');
+  } catch (e) {
+    console.log('Products table: concerns column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN step TEXT');
+    stmt.run();
+    console.log('Products table migration: step column added');
+  } catch (e) {
+    console.log('Products table: step column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN time_of_day TEXT');
+    stmt.run();
+    console.log('Products table migration: time_of_day column added');
+  } catch (e) {
+    console.log('Products table: time_of_day column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN cadence TEXT');
+    stmt.run();
+    console.log('Products table migration: cadence column added');
+  } catch (e) {
+    console.log('Products table: cadence column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN instructions TEXT');
+    stmt.run();
+    console.log('Products table migration: instructions column added');
+  } catch (e) {
+    console.log('Products table: instructions column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN cautions TEXT');
+    stmt.run();
+    console.log('Products table migration: cautions column added');
+  } catch (e) {
+    console.log('Products table: cautions column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN reviews TEXT');
+    stmt.run();
+    console.log('Products table migration: reviews column added');
+  } catch (e) {
+    console.log('Products table: reviews column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN evidence TEXT');
+    stmt.run();
+    console.log('Products table migration: evidence column added');
+  } catch (e) {
+    console.log('Products table: evidence column already exists or migration skipped');
   }
 }
 
-// Run migration on module load
+// Run migrations on module load
 migrateProductsTable();
 
 export const all = (sql, ...params) => db.prepare(sql).all(...params);
