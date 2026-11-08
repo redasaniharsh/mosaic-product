@@ -5,6 +5,11 @@ server/.env
 server/data/*.db
 server/data/*.db-journal
 server/uploads/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
 .DS_Store
 *.log
 docs/*.docx
