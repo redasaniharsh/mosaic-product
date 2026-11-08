@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS photos (
 
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   form TEXT NOT NULL,
   accent TEXT,
@@ -122,6 +123,14 @@ function migrateProductsTable() {
   } catch (e) {
     // Column may already exist - that's fine
     console.log('Products table: image column already exists or migration skipped');
+  }
+  try {
+    const stmt = db.prepare('ALTER TABLE products ADD COLUMN slug TEXT');
+    stmt.run();
+    console.log('Products table migration: slug column added');
+  } catch (e) {
+    // Column may already exist - that's fine
+    console.log('Products table: slug column already exists or migration skipped');
   }
 }
 
