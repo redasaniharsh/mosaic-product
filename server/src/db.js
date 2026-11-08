@@ -170,6 +170,11 @@ CREATE INDEX IF NOT EXISTS idx_checkins_user_date ON checkins(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_items_user ON routine_items(user_id, active);
 CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_photos_user ON photos(user_id, date);
+
+try:
+    db.exec('ALTER TABLE products ADD COLUMN image TEXT')
+except {}
+
 `);
 
 export const all = (sql, ...params) => db.prepare(sql).all(...params);
