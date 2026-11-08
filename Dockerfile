@@ -2,23 +2,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy ALL package files to root
+# Copy ALL root-level files
 COPY package.json package-lock* ./
 RUN npm install
 
-# Copy server sources (server/ at root level) into /app/server
-COPY server/package.json /app/server/package.json
-COPY server/package-lock.json /app/server/package-lock.json 2>/dev/null || true
+# Copy server from server/ directory at root level
+COPY server ./server
 RUN npm install --prefix /app/server || true
 
-# Copy web sources (web/ at root level) into /app/web
-COPY web/package.json /app/web/package.json
-COPY web/package-lock.json /app/web/package-lock.json 2>/dev/null || true
-RUN npm install --prefix /app/web || true
-
-# Copy all source code to their locations
-COPY server ./server
+# Copy web from web/ directory at root level  
 COPY web ./web
+RUN npm install --prefix /app/web || true
 
 # --- Build frontend ---
 WORKDIR /app/web
