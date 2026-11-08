@@ -1,6 +1,6 @@
 import './env.js';
 import bcrypt from 'bcryptjs';
-import { get, run, all, tx } from './db.js';
+import { db } from './db.js';
 import { uid, nowIso, today, addDays } from './util.js';
 import { PRODUCTS } from './data/products.js';
 import { RESEARCH } from './data/research.js';
@@ -17,7 +17,7 @@ const mulberry32 = (seed) => () => {
 
 const seedProducts = () => {
   PRODUCTS.forEach((p) => {
-    run(
+    db.run(
       `INSERT INTO products (slug, name, category, form, tagline, description, price, mrp, size, actives, concerns, step, time_of_day, cadence, instructions, cautions, rating, reviews, accent, evidence, active)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
        ON CONFLICT(slug) DO UPDATE SET
@@ -52,7 +52,7 @@ const seedProducts = () => {
 };
 
 const seedReviews = () => {
-  if ((get('SELECT COUNT(*) c FROM reviews')?.c || 0) > 0) return;
+  if ((db.get('SELECT COUNT(*) c FROM reviews')?.c || 0) > 0) return;
   const rows = [
     {
       product: 'advanced-hair-growth-serum',
@@ -104,7 +104,7 @@ const seedReviews = () => {
     }
   ];
   rows.forEach((r) => {
-    run(
+    db.run(
       'INSERT INTO reviews (id, source, product_slug, rating, text, theme, sentiment, created_at) VALUES (?,?,?,?,?,?,?,?)',
       uid('rev'),
       'Marketplace review (paraphrased)',
@@ -148,11 +148,11 @@ const svgPlate = (week, tone) => {
 
 const createDemo = async () => {
   const email = 'demo@manmatters.in';
-  if (get('SELECT id FROM users WHERE email = ?', email)) return;
+  if (db.get('SELECT id FROM users WHERE email = ?', email)) return;
 
   const id = uid('usr');
   const hash = await bcrypt.hash('demo1234', 10);
-  run(
+  db.run(
     'INSERT INTO users (id, name, email, phone, password_hash, age, city, goal, concern, hair_type, skin_type, diet, sleep_hours, stress, answers, onboarded, role, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)',
     id,
     'Aditya Rao',
@@ -205,8 +205,8 @@ const createDemo = async () => {
 
   const routineId = buildRoutine({ userId: id, answers });
   const start = addDays(today(), -34);
-  run('UPDATE routines SET start_date = ?, created_at = ? WHERE id = ?', start, nowIso(), routineId);
-  run('UPDATE users SET plan = ? WHERE id = ?', JSON.stringify({
+  db.run('UPDATE routines SET start_date = ?, created_at = ? WHERE id = ?', start, nowIso(), routineId);
+  db.run('UPDATE users SET plan = ? WHERE id = ?', JSON.stringify({
     headline: 'Your 13-week hair recovery protocol',
     summary:
       'Built around the 12-week growth cycle. The serum does the follicle work, the shampoo protects the scalp barrier, and biotin covers the nutritional floor. Tablets join at week 5 so you can tell what is adding what.',
@@ -235,7 +235,7 @@ const createDemo = async () => {
   }), id);
 
   const rand = mulberry32(20261108);
-  const items = all('SELECT * FROM routine_items WHERE user_id = ?', id);
+  const items = db.all('SELECT * FROM routine_items WHERE user_id = ?', id);
   const rateByWeek = { 1: 0.92, 2: 0.84, 3: 0.42, 4: 0.66, 5: 0.88 };
   const skipDays = new Set([19, 20, 27]);
   const checkins = [];
@@ -255,9 +255,8 @@ const createDemo = async () => {
     checkins.push({ date, taken, hairFall, sleep, stress, water: 4 + Math.round(rand() * 5) });
   }
 
-  tx(() => {
-    checkins.forEach((c) => {
-      run(
+  checkins.forEach((c) => {
+      db.run(
         'INSERT INTO checkins (id, user_id, date, taken, hair_fall, sleep_hours, water, stress, mood, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
         uid('chk'),
         id,
@@ -276,7 +275,7 @@ const createDemo = async () => {
 
   [0, 14, 28].forEach((offset) => {
     const date = addDays(start, offset);
-    run(
+    db.run(
       'INSERT INTO photos (id, user_id, date, week, angle, data_url, lighting, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?)',
       uid('ph'),
       id,
@@ -290,7 +289,7 @@ const createDemo = async () => {
     );
   });
 
-  run(
+  db.run(
     'INSERT INTO insights (id, user_id, week, kind, title, body, actions, source, created_at) VALUES (?,?,?,?,?,?,?,?,?)',
     uid('ins'),
     id,
@@ -319,7 +318,7 @@ const createDemo = async () => {
     ]
   ];
   convo.forEach(([role, content], i) => {
-    run(
+    db.run(
       'INSERT INTO messages (id, user_id, role, content, meta, created_at) VALUES (?,?,?,?,?,?)',
       uid('msg'),
       id,
@@ -330,7 +329,7 @@ const createDemo = async () => {
     );
   });
 
-  run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), id, 'seed_demo', '{}', nowIso());
+  db.run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), id, 'seed_demo', '{}', nowIso());
 };
 
 export const ensureSeeded = async () => {
@@ -343,11 +342,11 @@ const isDirect = process.argv[1] && process.argv[1].endsWith('seed.js');
 if (isDirect) {
   ensureSeeded().then(() => {
     const counts = {
-      products: get('SELECT COUNT(*) c FROM products')?.c,
-      reviews: get('SELECT COUNT(*) c FROM reviews')?.c,
-      users: get('SELECT COUNT(*) c FROM users')?.c,
-      checkins: get('SELECT COUNT(*) c FROM checkins')?.c,
-      photos: get('SELECT COUNT(*) c FROM photos')?.c,
+      products: db.get('SELECT COUNT(*) c FROM products')?.c,
+      reviews: db.get('SELECT COUNT(*) c FROM reviews')?.c,
+      users: db.get('SELECT COUNT(*) c FROM users')?.c,
+      checkins: db.get('SELECT COUNT(*) c FROM checkins')?.c,
+      photos: db.get('SELECT COUNT(*) c FROM photos')?.c,
       researchCustomers: RESEARCH.customers.length,
       reviewThemes: publicReviewThemes.length
     };

@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { get, all, run, parse } from '../db.js';
+import { db } from '../db.js';
 import { uid, nowIso, today, addDays, weekOf, clamp } from '../util.js';
 import { requireAuth } from '../auth.js';
 import { buildRoutine, activeRoutine, routineItems, phaseForWeek, adherenceWindow, scheduleForDate } from '../services/routine.js';
@@ -114,7 +114,7 @@ appRouter.post('/onboarding', requireAuth, async (req, res) => {
     generatedAt: nowIso()
   };
 
-  run(
+  db.run(
     'UPDATE users SET goal = ?, concern = ?, age = COALESCE(?, age), city = COALESCE(?, city), hair_type = COALESCE(?, hair_type), skin_type = COALESCE(?, skin_type), beard_type = COALESCE(?, beard_type), diet = COALESCE(?, diet), sleep_hours = COALESCE(?, sleep_hours), stress = COALESCE(?, stress), answers = ?, plan = ?, onboarded = 1 WHERE id = ?',
     answers.goal,
     answers.concern,
@@ -133,19 +133,19 @@ appRouter.post('/onboarding', requireAuth, async (req, res) => {
 
   const routine = activeRoutine(userId);
   if (routine && narrative) {
-    run('UPDATE routines SET headline = ?, rationale = ? WHERE id = ?', plan.headline, plan.summary, routineId);
+    db.run('UPDATE routines SET headline = ?, rationale = ? WHERE id = ?', plan.headline, plan.summary, routineId);
   }
-  run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), userId, 'onboarding_complete', JSON.stringify({ goal: answers.goal, concern: answers.concern }), nowIso());
+  db.run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), userId, 'onboarding_complete', JSON.stringify({ goal: answers.goal, concern: answers.concern }), nowIso());
 
-  res.json({ overview: buildOverview(get('SELECT * FROM users WHERE id = ?', userId)), plan, aiEnabled: aiEnabled() });
+  res.json({ overview: buildOverview(db.get('SELECT * FROM users WHERE id = ?', userId)), plan, aiEnabled: aiEnabled() });
 });
 
-appRouter.get('/overview', requireAuth, (req, res) => {
-  const user = get('SELECT * FROM users WHERE id = ?', req.user.id);
+appRouter.db.get('/overview', requireAuth, (req, res) => {
+  const user = db.get('SELECT * FROM users WHERE id = ?', req.user.id);
   const overview = buildOverview(user);
   if (!overview.routine) return res.json({ overview, signals: [], recent: [], insight: null });
   const week = overview.routine.week;
-  const insight = get(
+  const insight = db.get(
     "SELECT * FROM insights WHERE user_id = ? AND week = ? AND kind = 'weekly'",
     user.id,
     week
@@ -162,7 +162,7 @@ appRouter.get('/overview', requireAuth, (req, res) => {
   });
 });
 
-appRouter.get('/routine', requireAuth, (req, res) => {
+appRouter.db.get('/routine', requireAuth, (req, res) => {
   const user = req.user;
   const routine = activeRoutine(user.id);
   if (!routine) return res.json({ routine: null, items: [], weeks: [] });
@@ -191,18 +191,18 @@ appRouter.get('/routine', requireAuth, (req, res) => {
 
 appRouter.post('/routine/items', requireAuth, (req, res) => {
   const { slug, cadence } = req.body || {};
-  const product = get('SELECT * FROM products WHERE slug = ?', String(slug));
+  const product = db.get('SELECT * FROM products WHERE slug = ?', String(slug));
   if (!product) return res.status(404).json({ error: 'Product not found.' });
   const routine = activeRoutine(req.user.id);
   if (!routine) return res.status(400).json({ error: 'Complete onboarding first.' });
-  const existing = get(
+  const existing = db.get(
     'SELECT * FROM routine_items WHERE user_id = ? AND product_slug = ? AND active = 1',
     req.user.id,
     slug
   );
   if (existing) return res.status(409).json({ error: `${product.name} is already in your routine.` });
   const week = clamp(weekOf(routine.start_date, today()), 1, 13);
-  run(
+  db.run(
     `INSERT INTO routine_items (id, routine_id, user_id, product_slug, name, step, time_of_day, cadence, week_start, week_end, phase, instructions, optional, active)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,1)`,
     uid('ri'),
@@ -222,9 +222,9 @@ appRouter.post('/routine/items', requireAuth, (req, res) => {
 });
 
 appRouter.delete('/routine/items/:id', requireAuth, (req, res) => {
-  const item = get('SELECT * FROM routine_items WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
+  const item = db.get('SELECT * FROM routine_items WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
   if (!item) return res.status(404).json({ error: 'Item not found.' });
-  run('UPDATE routine_items SET active = 0 WHERE id = ?', item.id);
+  db.run('UPDATE routine_items SET active = 0 WHERE id = ?', item.id);
   res.json({ ok: true });
 });
 
@@ -245,12 +245,12 @@ appRouter.post('/checkins', requireAuth, (req, res) => {
   const data = parsed.data;
   const date = data.date || today();
   if (date > today()) return res.status(400).json({ error: 'You cannot log the future.' });
-  const existing = get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', req.user.id, date);
-  const validIds = new Set(all('SELECT id FROM routine_items WHERE user_id = ?', req.user.id).map((r) => r.id));
+  const existing = db.get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', req.user.id, date);
+  const validIds = new Set(db.all('SELECT id FROM routine_items WHERE user_id = ?', req.user.id).map((r) => r.id));
   const taken = (data.taken || (existing ? parse(existing.taken, []) : [])).filter((id) => validIds.has(id));
 
   if (existing) {
-    run(
+    db.run(
       'UPDATE checkins SET taken = ?, hair_fall = COALESCE(?, hair_fall), sleep_hours = COALESCE(?, sleep_hours), water = COALESCE(?, water), stress = COALESCE(?, stress), mood = COALESCE(?, mood), notes = COALESCE(?, notes) WHERE id = ?',
       JSON.stringify(taken),
       data.hairFall ?? null,
@@ -262,7 +262,7 @@ appRouter.post('/checkins', requireAuth, (req, res) => {
       existing.id
     );
   } else {
-    run(
+    db.run(
       'INSERT INTO checkins (id, user_id, date, taken, hair_fall, sleep_hours, water, stress, mood, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
       uid('chk'),
       req.user.id,
@@ -277,22 +277,22 @@ appRouter.post('/checkins', requireAuth, (req, res) => {
       nowIso()
     );
   }
-  run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), req.user.id, 'checkin', JSON.stringify({ date }), nowIso());
-  res.json({ ok: true, checkin: get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', req.user.id, date) });
+  db.run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), req.user.id, 'checkin', JSON.stringify({ date }), nowIso());
+  res.json({ ok: true, checkin: db.get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', req.user.id, date) });
 });
 
 appRouter.post('/checkins/toggle', requireAuth, (req, res) => {
   const { itemId, date } = req.body || {};
   const targetDate = date || today();
-  const item = get('SELECT * FROM routine_items WHERE id = ? AND user_id = ? AND active = 1', String(itemId), req.user.id);
+  const item = db.get('SELECT * FROM routine_items WHERE id = ? AND user_id = ? AND active = 1', String(itemId), req.user.id);
   if (!item) return res.status(404).json({ error: 'That step is not part of your routine.' });
-  const existing = get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', req.user.id, targetDate);
+  const existing = db.get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', req.user.id, targetDate);
   const taken = existing ? parse(existing.taken, []) : [];
   const next = taken.includes(item.id) ? taken.filter((id) => id !== item.id) : [...taken, item.id];
   if (existing) {
-    run('UPDATE checkins SET taken = ? WHERE id = ?', JSON.stringify(next), existing.id);
+    db.run('UPDATE checkins SET taken = ? WHERE id = ?', JSON.stringify(next), existing.id);
   } else {
-    run(
+    db.run(
       'INSERT INTO checkins (id, user_id, date, taken, created_at) VALUES (?,?,?,?,?)',
       uid('chk'),
       req.user.id,
@@ -304,9 +304,9 @@ appRouter.post('/checkins/toggle', requireAuth, (req, res) => {
   res.json({ ok: true, date: targetDate, taken: next });
 });
 
-appRouter.get('/checkins', requireAuth, (req, res) => {
+appRouter.db.get('/checkins', requireAuth, (req, res) => {
   const days = clamp(Number(req.query.days) || 30, 1, 365);
-  const rows = all(
+  const rows = db.all(
     'SELECT * FROM checkins WHERE user_id = ? AND date >= ? ORDER BY date ASC',
     req.user.id,
     addDays(today(), -(days - 1))
@@ -317,11 +317,11 @@ appRouter.get('/checkins', requireAuth, (req, res) => {
   });
 });
 
-appRouter.get('/progress', requireAuth, (req, res) => {
+appRouter.db.get('/progress', requireAuth, (req, res) => {
   const user = req.user;
   const routine = activeRoutine(user.id);
   if (!routine) return res.json({ routine: null });
-  const photos = all(
+  const photos = db.all(
     'SELECT id, date, week, angle, lighting, notes FROM photos WHERE user_id = ? ORDER BY date DESC LIMIT 40',
     user.id
   );
@@ -351,7 +351,7 @@ appRouter.post('/photos', requireAuth, (req, res) => {
   const photoDate = date || today();
   const week = clamp(weekOf(routine.start_date, photoDate), 1, 13);
   const id = uid('ph');
-  run(
+  db.run(
     'INSERT INTO photos (id, user_id, date, week, angle, data_url, lighting, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?)',
     id,
     req.user.id,
@@ -363,24 +363,24 @@ appRouter.post('/photos', requireAuth, (req, res) => {
     notes ? String(notes).slice(0, 300) : null,
     nowIso()
   );
-  run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), req.user.id, 'photo_capture', JSON.stringify({ week, angle }), nowIso());
+  db.run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), req.user.id, 'photo_capture', JSON.stringify({ week, angle }), nowIso());
   res.status(201).json({ id, week, date: photoDate });
 });
 
-appRouter.get('/photos/:id', requireAuth, (req, res) => {
-  const photo = get('SELECT * FROM photos WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
+appRouter.db.get('/photos/:id', requireAuth, (req, res) => {
+  const photo = db.get('SELECT * FROM photos WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
   if (!photo) return res.status(404).json({ error: 'Photo not found.' });
   res.json(photo);
 });
 
 appRouter.delete('/photos/:id', requireAuth, (req, res) => {
-  run('DELETE FROM photos WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
+  db.run('DELETE FROM photos WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
   res.json({ ok: true });
 });
 
-appRouter.get('/products', (req, res) => {
+appRouter.db.get('/products', (req, res) => {
   const { concern, category, q } = req.query;
-  let rows = all('SELECT * FROM products WHERE active = 1 ORDER BY category, price ASC');
+  let rows = db.all('SELECT * FROM products WHERE active = 1 ORDER BY category, price ASC');
   rows = rows.map((p) => ({ ...p, actives: parse(p.actives, []), concerns: parse(p.concerns, []) }));
   if (concern) rows = rows.filter((p) => p.concerns.includes(String(concern)));
   if (category) rows = rows.filter((p) => p.category === String(category));
@@ -391,25 +391,25 @@ appRouter.get('/products', (req, res) => {
   res.json({ products: rows });
 });
 
-appRouter.get('/products/:slug', (req, res) => {
-  const p = get('SELECT * FROM products WHERE slug = ?', req.params.slug);
+appRouter.db.get('/products/:slug', (req, res) => {
+  const p = db.get('SELECT * FROM products WHERE slug = ?', req.params.slug);
   if (!p) return res.status(404).json({ error: 'Product not found.' });
-  const reviews = all('SELECT * FROM reviews WHERE product_slug = ? ORDER BY created_at DESC LIMIT 6', p.slug);
+  const reviews = db.all('SELECT * FROM reviews WHERE product_slug = ? ORDER BY created_at DESC LIMIT 6', p.slug);
   res.json({ product: { ...p, actives: parse(p.actives, []), concerns: parse(p.concerns, []) }, reviews });
 });
 
-appRouter.get('/insights/weekly', requireAuth, (req, res) => {
+appRouter.db.get('/insights/weekly', requireAuth, (req, res) => {
   const routine = activeRoutine(req.user.id);
   if (!routine) return res.json({ insight: null });
   const week = clamp(weekOf(routine.start_date, today()), 1, 13);
-  const insight = get("SELECT * FROM insights WHERE user_id = ? AND week = ? AND kind = 'weekly'", req.user.id, week);
+  const insight = db.get("SELECT * FROM insights WHERE user_id = ? AND week = ? AND kind = 'weekly'", req.user.id, week);
   if (!insight) return res.json({ insight: null });
   res.json({ insight: { ...insight, actions: parse(insight.actions, []) } });
 });
 
-appRouter.get('/escalations', requireAuth, (req, res) => {
+appRouter.db.get('/escalations', requireAuth, (req, res) => {
   res.json({
-    escalations: all('SELECT * FROM escalations WHERE user_id = ? ORDER BY created_at DESC', req.user.id)
+    escalations: db.all('SELECT * FROM escalations WHERE user_id = ? ORDER BY created_at DESC', req.user.id)
   });
 });
 
@@ -417,7 +417,7 @@ appRouter.post('/escalations', requireAuth, (req, res) => {
   const { reason, detail } = req.body || {};
   if (!reason) return res.status(400).json({ error: 'Tell us what to review.' });
   const id = uid('esc');
-  run(
+  db.run(
     'INSERT INTO escalations (id, user_id, reason, detail, status, created_at) VALUES (?,?,?,?,?,?)',
     id,
     req.user.id,
@@ -426,7 +426,7 @@ appRouter.post('/escalations', requireAuth, (req, res) => {
     'queued',
     nowIso()
   );
-  run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), req.user.id, 'escalation', JSON.stringify({ reason }), nowIso());
+  db.run('INSERT INTO events (id, user_id, name, props, created_at) VALUES (?,?,?,?,?)', uid('ev'), req.user.id, 'escalation', JSON.stringify({ reason }), nowIso());
   res.status(201).json({
     id,
     status: 'queued',
@@ -439,13 +439,13 @@ appRouter.post('/escalations', requireAuth, (req, res) => {
   });
 });
 
-appRouter.get('/export', requireAuth, (req, res) => {
+appRouter.db.get('/export', requireAuth, (req, res) => {
   const user = req.user;
   res.json({
     exportedAt: nowIso(),
     profile: { name: user.name, email: user.email, goal: user.goal, concern: user.concern },
     routine: activeRoutine(user.id) || null,
-    checkins: all('SELECT * FROM checkins WHERE user_id = ? ORDER BY date', user.id).map((c) => ({ ...c, taken: parse(c.taken, []) })),
-    photos: all('SELECT id, date, week, angle, notes FROM photos WHERE user_id = ?', user.id)
+    checkins: db.all('SELECT * FROM checkins WHERE user_id = ? ORDER BY date', user.id).map((c) => ({ ...c, taken: parse(c.taken, []) })),
+    photos: db.all('SELECT id, date, week, angle, notes FROM photos WHERE user_id = ?', user.id)
   });
 });

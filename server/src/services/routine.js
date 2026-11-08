@@ -1,4 +1,4 @@
-import { get, all, run, parse, tx } from '../db.js';
+import { db } from '../db.js';
 import { uid, nowIso, today, addDays, weekOf, clamp } from '../util.js';
 
 const DAY_INDEX = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 0 };
@@ -24,7 +24,7 @@ const draftFor = (answers) => {
   const items = [];
   const add = (slug, phase, overrides = {}) => {
     if (items.some((i) => i.slug === slug)) return;
-    const p = get('SELECT * FROM products WHERE slug = ?', slug);
+    const p = db.get('SELECT * FROM products WHERE slug = ?', slug);
     if (!p) return;
     items.push({
       slug,
@@ -150,12 +150,12 @@ export const buildRoutine = ({ userId, answers, narrative }) => {
     'Built around the 12-week growth cycle: foundation first, then consistency, then evidence. Products are introduced in phases so you can tell what is working.';
 
   return tx(() => {
-    run('UPDATE routines SET active = 0 WHERE user_id = ?', userId);
-    run(
+    db.run('UPDATE routines SET active = 0 WHERE user_id = ?', userId);
+    db.run(
       'INSERT INTO routines (id, user_id, version, start_date, duration_days, headline, rationale, active, created_at) VALUES (?,?,?,?,?,?,?,1,?)',
       routineId,
       userId,
-      (get('SELECT COUNT(*) c FROM routines WHERE user_id = ?', userId)?.c || 0) + 1,
+      (db.get('SELECT COUNT(*) c FROM routines WHERE user_id = ?', userId)?.c || 0) + 1,
       startDate,
       91,
       headline,
@@ -163,7 +163,7 @@ export const buildRoutine = ({ userId, answers, narrative }) => {
       nowIso()
     );
     draft.items.forEach((item, index) => {
-      run(
+      db.run(
         `INSERT INTO routine_items (id, routine_id, user_id, product_slug, name, step, time_of_day, cadence, week_start, week_end, phase, instructions, optional, active)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)`,
         uid('ri'),
@@ -187,10 +187,10 @@ export const buildRoutine = ({ userId, answers, narrative }) => {
 };
 
 export const activeRoutine = (userId) =>
-  get('SELECT * FROM routines WHERE user_id = ? AND active = 1 ORDER BY created_at DESC LIMIT 1', userId);
+  db.get('SELECT * FROM routines WHERE user_id = ? AND active = 1 ORDER BY created_at DESC LIMIT 1', userId);
 
 export const routineItems = (userId, week) => {
-  const rows = all(
+  const rows = db.all(
     'SELECT * FROM routine_items WHERE user_id = ? AND active = 1 ORDER BY step ASC, name ASC',
     userId
   );
@@ -200,7 +200,7 @@ export const routineItems = (userId, week) => {
 };
 
 const doseFor = (slug) => {
-  const p = get('SELECT form, size FROM products WHERE slug = ?', slug);
+  const p = db.get('SELECT form, size FROM products WHERE slug = ?', slug);
   return p ? defaultDose(p.form, p.size) : '';
 };
 
@@ -220,7 +220,7 @@ export const weekProgress = (userId, startDate, week) => {
     const date = addDays(weekStart, i);
     if (date > today()) break;
     const scheduled = scheduleForDate(userId, date, startDate);
-    const checkin = get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', userId, date);
+    const checkin = db.get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', userId, date);
     const taken = checkin ? parse(checkin.taken, []) : [];
     const completed = scheduled.filter((s) => taken.includes(s.id)).length;
     expected += scheduled.length;
@@ -250,7 +250,7 @@ export const adherenceWindow = (userId, startDate, days) => {
 };
 
 export const adherenceRange = (userId, startDate, from, to) => {
-  const rows = all(
+  const rows = db.all(
     `SELECT date, taken FROM checkins WHERE user_id = ? AND date >= ? AND date <= ? ORDER BY date ASC`,
     userId,
     from,
@@ -263,7 +263,7 @@ export const adherenceRange = (userId, startDate, from, to) => {
     if (date < startDate || date > today()) continue;
     const scheduled = scheduleForDate(userId, date, startDate);
     if (!scheduled.length) continue;
-    const taken = byDate.get(date) || [];
+    const taken = byDate.db.get(date) || [];
     expected += scheduled.length;
     done += scheduled.filter((s) => taken.includes(s.id)).length;
   }

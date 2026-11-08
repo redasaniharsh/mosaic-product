@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { get, all, run, parse } from '../db.js';
+import { db } from '../db.js';
 import { uid, nowIso, today, weekOf, clamp } from '../util.js';
 import { requireAuth } from '../auth.js';
 import { buildOverview, buildSeries, buildSignals } from '../services/progress.js';
@@ -26,17 +26,17 @@ const contextFor = (user) => {
   return { ctx: { ...overview, recent: buildRecent(recent) }, overview, recent };
 };
 
-aiRouter.get('/status', (_req, res) => {
+aiRouter.db.get('/status', (_req, res) => {
   res.json({ ...aiStatus(), model: env.geminiModel, mode: aiEnabled() ? 'live' : 'rules' });
 });
 
-aiRouter.get('/history', requireAuth, (req, res) => {
-  const rows = all('SELECT id, role, content, meta, created_at FROM messages WHERE user_id = ? ORDER BY created_at ASC LIMIT 100', req.user.id);
+aiRouter.db.get('/history', requireAuth, (req, res) => {
+  const rows = db.all('SELECT id, role, content, meta, created_at FROM messages WHERE user_id = ? ORDER BY created_at ASC LIMIT 100', req.user.id);
   res.json({ messages: rows.map((m) => ({ ...m, meta: parse(m.meta, null) })) });
 });
 
 aiRouter.delete('/history', requireAuth, (req, res) => {
-  run('DELETE FROM messages WHERE user_id = ?', req.user.id);
+  db.run('DELETE FROM messages WHERE user_id = ?', req.user.id);
   res.json({ ok: true });
 });
 
@@ -54,7 +54,7 @@ aiRouter.post('/chat', requireAuth, async (req, res) => {
   const user = req.user;
   const { ctx, overview } = contextFor(user);
 
-  run(
+  db.run(
     'INSERT INTO messages (id, user_id, role, content, meta, created_at) VALUES (?,?,?,?,?,?)',
     uid('msg'),
     user.id,
@@ -109,7 +109,7 @@ aiRouter.post('/chat', requireAuth, async (req, res) => {
 
   const redFlag = /(patch|bleed|pus|pain|rash|chest|lump|fever|suicid)/i.test(String(message)) && /(sudden|bleed|pus|pain|rash|chest|lump|fever|suicid)/i.test(String(message));
   const meta = { mode, redFlag, provider: usedProvider };
-  run(
+  db.run(
     'INSERT INTO messages (id, user_id, role, content, meta, created_at) VALUES (?,?,?,?,?,?)',
     uid('msg'),
     user.id,
@@ -133,7 +133,7 @@ aiRouter.post('/review', requireAuth, async (req, res) => {
   if (!routine) return res.status(400).json({ error: 'Complete onboarding first.' });
   const week = clamp(weekOf(routine.start_date, today()), 1, 13);
   const force = Boolean(req.body?.refresh);
-  const existing = get("SELECT * FROM insights WHERE user_id = ? AND week = ? AND kind = 'weekly'", user.id, week);
+  const existing = db.get("SELECT * FROM insights WHERE user_id = ? AND week = ? AND kind = 'weekly'", user.id, week);
   if (existing && !force) {
     return res.json({ insight: { ...existing, actions: parse(existing.actions, []) }, cached: true });
   }
@@ -186,9 +186,9 @@ aiRouter.post('/review', requireAuth, async (req, res) => {
   const id = existing?.id || uid('ins');
   const provider = data._provider || source;
   if (existing) {
-    run('UPDATE insights SET title = ?, body = ?, actions = ?, source = ?, created_at = ? WHERE id = ?', data.headline, data.body, JSON.stringify(data.actions || []), provider, nowIso(), id);
+    db.run('UPDATE insights SET title = ?, body = ?, actions = ?, source = ?, created_at = ? WHERE id = ?', data.headline, data.body, JSON.stringify(data.actions || []), provider, nowIso(), id);
   } else {
-    run(
+    db.run(
       'INSERT INTO insights (id, user_id, week, kind, title, body, actions, source, created_at) VALUES (?,?,?,?,?,?,?,?,?)',
       id,
       user.id,
