@@ -4,15 +4,15 @@ WORKDIR /app
 
 # Copy root package files
 COPY package.json package-lock* ./
-RUN npm ci
+RUN npm install
 
 # Copy server sources (server/ at root level)
 COPY server/package.json server/package-lock* ./
-RUN npm ci --prefix server
+RUN npm ci --prefix server || npm install --prefix server
 
 # Copy web sources (web/ at root level)
 COPY web/package.json web/package-lock* ./
-RUN npm ci --prefix web
+RUN npm ci --prefix web || npm install --prefix web
 
 # Copy all source code (server/ and web/ at root level)
 COPY server ./server
@@ -33,7 +33,7 @@ COPY --from=builder /app/web/dist ./web/dist
 
 # Install only server deps (no dev deps)
 WORKDIR /app/server
-RUN npm ci --production
+RUN npm ci --production || npm install --production
 
 # Expose API port
 EXPOSE 4000
