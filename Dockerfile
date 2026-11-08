@@ -2,21 +2,21 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# --- Install deps (server + web in one stage) ---
+# Copy root package files
 COPY package.json package-lock* ./
 RUN npm ci
 
-# Copy server sources
+# Copy server sources (server/ at root level)
 COPY server/package.json server/package-lock* ./
 RUN npm ci --prefix server
 
-# Copy web sources
+# Copy web sources (web/ at root level)
 COPY web/package.json web/package-lock* ./
 RUN npm ci --prefix web
 
-# Copy all source code
-COPY server/server ./server
-COPY web/web ./web
+# Copy all source code (server/ and web/ at root level)
+COPY server ./server
+COPY web ./web
 
 # --- Build frontend ---
 WORKDIR /app/web
