@@ -5,13 +5,12 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "node --watch --no-warnings src/index.js",
-    "start": "node --no-warnings src/index.js",
-    "seed": "node --no-warnings src/seed.js"
+    "dev": "node --watch --experimental-sqlite --no-warnings src/index.js",
+    "start": "node --experimental-sqlite --no-warnings src/index.js",
+    "seed": "node --experimental-sqlite --no-warnings src/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
     "docx": "^9.15.3",
     "dotenv": "^16.4.7",

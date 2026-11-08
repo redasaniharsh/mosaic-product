@@ -1,3 +1,4 @@
+import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,22 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(process.env.DB_DIR || path.join(__dirname, '..', 'data'));
 fs.mkdirSync(dataDir, { recursive: true });
 
-const dbPath = process.env.DB_PATH || path.join(dataDir, 'companion.db');
+export const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, 'companion.db'));
 
-let rawDb;
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
-try {
-  const nodeSqlite = await import('node:sqlite');
-  rawDb = new nodeSqlite.DatabaseSync(dbPath);
-} catch {
-  const { default: Database } = await import('better-sqlite3');
-  rawDb = new Database(dbPath);
-}
-
-rawDb.exec('PRAGMA journal_mode = WAL');
-rawDb.exec('PRAGMA foreign_keys = ON');
-
-rawDb.exec(`
+db.exec(`
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -181,9 +172,9 @@ CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_photos_user ON photos(user_id, date);
 `);
 
-export const all = (sql, ...params) => rawDb.prepare(sql).all(...params);
-export const get = (sql, ...params) => rawDb.prepare(sql).get(...params);
-export const run = (sql, ...params) => rawDb.prepare(sql).run(...params);
+export const all = (sql, ...params) => db.prepare(sql).all(...params);
+export const get = (sql, ...params) => db.prepare(sql).get(...params);
+export const run = (sql, ...params) => db.prepare(sql).run(...params);
 
 export const parse = (value, fallback) => {
   if (value == null) return fallback;
@@ -195,21 +186,19 @@ export const parse = (value, fallback) => {
 };
 
 export const tx = (fn) => {
-  rawDb.exec('BEGIN');
+  db.exec('BEGIN');
   try {
     const result = fn();
-    rawDb.exec('COMMIT');
+    db.exec('COMMIT');
     return result;
   } catch (err) {
-    rawDb.exec('ROLLBACK');
+    db.exec('ROLLBACK');
     throw err;
   }
 };
 
-rawDb.all = all;
-rawDb.get = get;
-rawDb.run = run;
-rawDb.parse = parse;
-rawDb.tx = tx;
-
-export const db = rawDb;
+db.all = all;
+db.get = get;
+db.run = run;
+db.parse = parse;
+db.tx = tx;
