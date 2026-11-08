@@ -171,9 +171,8 @@ CREATE INDEX IF NOT EXISTS idx_items_user ON routine_items(user_id, active);
 CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_photos_user ON photos(user_id, date);
 
-try:
-    db.exec('ALTER TABLE products ADD COLUMN image TEXT')
-except {}
+const addImageCol = db.prepare('ALTER TABLE products ADD COLUMN image TEXT');
+try { addImageCol.run(); } catch {}
 
 `);
 
