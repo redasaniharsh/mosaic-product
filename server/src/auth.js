@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { get } from './db.js';
+import db from './db.js';
 import { env } from './env.js';
 
 const SECRET = env.jwtSecret;
@@ -24,7 +24,7 @@ export const requireAuth = (req, res, next) => {
   if (!token) return res.status(401).json({ error: 'Sign in to continue.' });
   try {
     const payload = jwt.verify(token, SECRET);
-    const user = get('SELECT * FROM users WHERE id = ?', payload.sub);
+    const user = db.get('SELECT * FROM users WHERE id = ?', payload.sub);
     if (!user) return res.status(401).json({ error: 'Session no longer valid.' });
     req.user = user;
     next();
@@ -39,7 +39,7 @@ export const optionalAuth = (req, _res, next) => {
   if (token) {
     try {
       const payload = jwt.verify(token, SECRET);
-      req.user = get('SELECT * FROM users WHERE id = ?', payload.sub) || null;
+      req.user = db.get('SELECT * FROM users WHERE id = ?', payload.sub) || null;
     } catch {
       req.user = null;
     }
