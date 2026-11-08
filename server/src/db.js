@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToF } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToF(import.meta.url));
 const dataDir = path.resolve(process.env.DB_DIR || path.join(__dirname, '..', 'data'));
