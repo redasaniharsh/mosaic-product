@@ -256,21 +256,20 @@ const createDemo = async () => {
   }
 
   checkins.forEach((c) => {
-      db.run(
-        'INSERT INTO checkins (id, user_id, date, taken, hair_fall, sleep_hours, water, stress, mood, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-        uid('chk'),
-        id,
-        c.date,
-        JSON.stringify(c.taken),
-        c.hairFall,
-        c.sleep,
-        c.water,
-        c.stress,
-        c.stress >= 5 ? 'wired' : c.sleep >= 7.2 ? 'steady' : 'flat',
-        c.hairFall && c.hairFall > 45 ? 'More strands than usual on wash day.' : null,
-        nowIso()
-      );
-    });
+    db.run(
+      'INSERT INTO checkins (id, user_id, date, taken, hair_fall, sleep_hours, water, stress, mood, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+      uid('chk'),
+      id,
+      c.date,
+      JSON.stringify(c.taken),
+      c.hairFall,
+      c.sleep,
+      c.water,
+      c.stress,
+      c.stress >= 5 ? 'wired' : c.sleep >= 7.2 ? 'steady' : 'flat',
+      c.hairFall && c.hairFall > 45 ? 'More strands than usual on wash day.' : null,
+      nowIso()
+    );
   });
 
   [0, 14, 28].forEach((offset) => {
