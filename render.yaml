@@ -1,0 +1,30 @@
+# render.yaml — single-service deployment for Mosaic Fellowship
+services:
+  - type: web
+    name: mosaic-companion
+    env: node
+    plan: free
+    # Build + start do everything in one go:
+    buildCommand: |
+      cd server && npm install --production=false
+      cd ../web && npm install --production=false
+      cd ../web && npm run build   # tsc -b && vite build
+    startCommand: |
+      cd server && node src/index.js
+    # Port Express will use (default 4000)
+    envVars:
+      # Gemini keys (3). Set these as secret env vars in the dashboard.
+      - key: GEMINI_KEY_1
+        fromSecret: GEMINI_KEY_1
+      - key: GEMINI_KEY_2
+        fromSecret: GEMINI_KEY_2
+      - key: GEMINI_KEY_3
+        fromSecret: GEMINI_KEY_3
+      - key: NVIDIA_NEMOTOR_KEY
+        fromSecret: NVIDIA_NEMOTOR_KEY
+      - key: PORT
+        value: "4000"
+    # SQLite data persists on disk; Render gives a temp filesystem.
+    # For persistence use a PostgreSQL external DB or Render Disk.
+    # For this Builder Round demo, SQLite in /tmp is fine for the session.
+    healthCheckPath: /api/health
