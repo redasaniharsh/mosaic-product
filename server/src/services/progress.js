@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { get, all, parse } from '../db.js';
 import { today, addDays, diffDays, weekOf, clamp, pct } from '../util.js';
 import { activeRoutine, scheduleForDate, routineItems, phaseForWeek, adherenceWindow, adherenceRange, cadenceMeta } from './routine.js';
 import { PHASES } from '../data/products.js';
@@ -9,7 +9,7 @@ const sum = (arr) => arr.reduce((a, b) => a + b, 0);
 const avg = (arr) => (arr.length ? sum(arr) / arr.length : 0);
 
 const checkinMap = (userId, from, to) => {
-  const rows = db.all(
+  const rows = all(
     'SELECT * FROM checkins WHERE user_id = ? AND date >= ? AND date <= ? ORDER BY date ASC',
     userId,
     from,
@@ -32,7 +32,7 @@ export const progressScore = (user, routine) => {
   const a30 = adherenceWindow(user.id, routine.start_date, 30);
   const last7 = checkinMap(user.id, addDays(today(), -6), today());
   const loggedDays = last7.size;
-  const photos = db.all(
+  const photos = all(
     'SELECT * FROM photos WHERE user_id = ? AND date >= ?',
     user.id,
     addDays(today(), -28)
@@ -51,7 +51,7 @@ export const progressScore = (user, routine) => {
       value: (() => {
         const weekly = routineItems(user.id, weekOf(routine.start_date, today())).filter((i) => i.cadence !== 'daily' && i.cadence !== 'as_needed');
         if (!weekly.length) return 100;
-        const taken = new Set(db.all('SELECT taken FROM checkins WHERE user_id = ? AND date >= ?', user.id, addDays(today(), -6)).flatMap((r) => parse(r.taken, [])));
+        const taken = new Set(all('SELECT taken FROM checkins WHERE user_id = ? AND date >= ?', user.id, addDays(today(), -6)).flatMap((r) => parse(r.taken, [])));
         const done = weekly.filter((w) => taken.has(w.id)).length;
         return pct(done, weekly.length);
       })()
@@ -62,7 +62,7 @@ export const progressScore = (user, routine) => {
 };
 
 export const streakInfo = (userId) => {
-  const rows = db.all('SELECT date, taken FROM checkins WHERE user_id = ? ORDER BY date DESC LIMIT 400', userId);
+  const rows = all('SELECT date, taken FROM checkins WHERE user_id = ? ORDER BY date DESC LIMIT 400', userId);
   const byDate = new Map(rows.map((r) => [r.date, parse(r.taken, [])]));
   let streak = 0;
   let cursor = today();
@@ -90,14 +90,14 @@ export const buildOverview = (user) => {
   const week = clamp(weekOf(routine.start_date, today()), 1, 13);
   const day = diffDays(today(), routine.start_date) + 1;
   const scheduled = scheduleForDate(user.id, today(), routine.start_date);
-  const todayCheckin = db.get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', user.id, today());
+  const todayCheckin = get('SELECT * FROM checkins WHERE user_id = ? AND date = ?', user.id, today());
   const taken = todayCheckin ? parse(todayCheckin.taken, []) : [];
   const todayItems = scheduled.map((item) => ({ ...item, done: taken.includes(item.id) }));
   const a7 = adherenceWindow(user.id, routine.start_date, 7);
   const a30 = adherenceWindow(user.id, routine.start_date, 30);
   const aAll = adherenceWindow(user.id, routine.start_date, 400);
   const score = progressScore(user, routine);
-  const photos = db.all('SELECT id, date, week, angle, data_url, lighting, notes FROM photos WHERE user_id = ? ORDER BY date DESC LIMIT 24', user.id);
+  const photos = all('SELECT id, date, week, angle, data_url, lighting, notes FROM photos WHERE user_id = ? ORDER BY date DESC LIMIT 24', user.id);
   const phase = PHASES[phaseForWeek(week) - 1];
   const items = routineItems(user.id, week);
 
@@ -162,7 +162,7 @@ export const buildOverview = (user) => {
   };
 };
 
-const productForm = (slug) => db.get('SELECT form FROM products WHERE slug = ?', slug)?.form || 'serum';
+const productForm = (slug) => get('SELECT form FROM products WHERE slug = ?', slug)?.form || 'serum';
 
 export const buildSeries = (userId, days = 30) => {
   const routine = activeRoutine(userId);
@@ -177,7 +177,7 @@ export const buildSeries = (userId, days = 30) => {
   for (let i = 0; i < span; i += 1) {
     const date = addDays(start, i);
     const scheduled = scheduleForDate(userId, date, routine.start_date);
-    const checkin = map.db.get(date);
+    const checkin = map.get(date);
     const taken = checkin?.taken || [];
     const done = scheduled.filter((s) => taken.includes(s.id)).length;
     out.push({
@@ -206,10 +206,10 @@ export const buildHeatmap = (userId, days = 91) => {
   for (let i = 0; i < days; i += 1) {
     const date = addDays(start, i);
     const scheduled = scheduleForDate(userId, date, routine.start_date);
-    const taken = map.db.get(date)?.taken || [];
+    const taken = map.get(date)?.taken || [];
     const done = scheduled.filter((s) => taken.includes(s.id)).length;
     const ratio = scheduled.length ? done / scheduled.length : 0;
-    const level = !map.db.get(date) ? -1 : ratio === 1 ? 4 : ratio >= 0.66 ? 3 : ratio >= 0.33 ? 2 : ratio > 0 ? 1 : 0;
+    const level = !map.get(date) ? -1 : ratio === 1 ? 4 : ratio >= 0.66 ? 3 : ratio >= 0.33 ? 2 : ratio > 0 ? 1 : 0;
     cells.push({ date, level, done, expected: scheduled.length, future: date > today() });
   }
   return cells;
@@ -241,7 +241,7 @@ export const buildWeeks = (userId) => {
       adherence: expected ? Math.round((done / expected) * 100) : null,
       hairFall: fallVals.length ? Math.round(avg(fallVals)) : null,
       logged: map.size,
-      photos: db.get('SELECT COUNT(*) c FROM photos WHERE user_id = ? AND week = ?', userId, w)?.c || 0
+      photos: get('SELECT COUNT(*) c FROM photos WHERE user_id = ? AND week = ?', userId, w)?.c || 0
     });
   }
   return weeks;
@@ -318,7 +318,7 @@ export const buildSignals = (user) => {
     });
   }
 
-  const lastPhoto = db.get('SELECT date FROM photos WHERE user_id = ? ORDER BY date DESC LIMIT 1', user.id);
+  const lastPhoto = get('SELECT date FROM photos WHERE user_id = ? ORDER BY date DESC LIMIT 1', user.id);
   if (!lastPhoto || diffDays(today(), lastPhoto.date) >= 10) {
     signals.push({
       id: 'photo-due',
@@ -380,7 +380,7 @@ export const buildRefillPlan = (user) => {
         name: i.name,
         packWeeks,
         perWeek: (cadenceMeta[i.cadence] || cadenceMeta.daily).perWeek,
-        monthlyCost: Math.round(((db.get('SELECT price FROM products WHERE slug = ?', i.product_slug)?.price || 0) * 4.3) / packWeeks)
+        monthlyCost: Math.round(((get('SELECT price FROM products WHERE slug = ?', i.product_slug)?.price || 0) * 4.3) / packWeeks)
       };
     });
 };

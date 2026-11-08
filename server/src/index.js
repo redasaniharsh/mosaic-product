@@ -20,6 +20,8 @@ app.set('trust proxy', 1);
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '3mb' }));
 
+app.get('/api/health', (_req, res) => res.json({ ok: true, status: 'healthy' }));
+
 app.use('/api/auth', authRouter);
 app.use('/api/app', appRouter);
 app.use('/api/ai', aiRouter);

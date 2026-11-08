@@ -1,15 +1,15 @@
 import express from 'express';
 import { RESEARCH, derivePatterns } from '../data/research.js';
 import { PRODUCTS, PHASES, CONCERNS, publicReviewThemes } from '../data/products.js';
-import { db } from '../db.js';
+import { all, get, run } from '../db.js';
 import { aiStatus } from '../services/ai.js';
 
 export const publicRouter = express.Router();
 
-publicRouter.db.get('/site', (_req, res) => {
+publicRouter.get('/site', (_req, res) => {
   const patterns = derivePatterns(RESEARCH.customers);
   const featuredSlugs = ['advanced-hair-growth-serum', 'biotin-gummies', 'beard-growth-oil', 'vitamin-c-serum'];
-  const featured = db.all('SELECT * FROM products WHERE active = 1').filter((p) => featuredSlugs.includes(p.slug));
+  const featured = all('SELECT * FROM products WHERE active = 1').filter((p) => featuredSlugs.includes(p.slug));
 
   res.json({
     brand: {
@@ -20,9 +20,9 @@ publicRouter.db.get('/site', (_req, res) => {
     },
     stats: {
       customers: RESEARCH.customers.length,
-      products: db.get('SELECT COUNT(*) c FROM products WHERE active = 1')?.c || 0,
-      checkins: db.get('SELECT COUNT(*) c FROM checkins')?.c || 0,
-      routines: db.get('SELECT COUNT(*) c FROM routines')?.c || 0,
+      products: get('SELECT COUNT(*) c FROM products WHERE active = 1')?.c || 0,
+      checkins: get('SELECT COUNT(*) c FROM checkins')?.c || 0,
+      routines: get('SELECT COUNT(*) c FROM routines')?.c || 0,
       ai: aiStatus().enabled
     },
     patterns: patterns.slice(0, 6),
@@ -56,16 +56,16 @@ publicRouter.db.get('/site', (_req, res) => {
   });
 });
 
-publicRouter.db.get('/health', (_req, res) => {
+publicRouter.get('/health', (_req, res) => {
   res.json({
     ok: true,
     time: new Date().toISOString(),
     ai: aiStatus(),
-    users: db.get('SELECT COUNT(*) c FROM users')?.c || 0,
-    products: db.get('SELECT COUNT(*) c FROM products')?.c || 0
+    users: get('SELECT COUNT(*) c FROM users')?.c || 0,
+    products: get('SELECT COUNT(*) c FROM products')?.c || 0
   });
 });
 
-publicRouter.db.get('/products', (_req, res) => {
+publicRouter.get('/products', (_req, res) => {
   res.json({ products: PRODUCTS });
 });
