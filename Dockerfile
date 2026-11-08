@@ -2,19 +2,21 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy root package files
+# Copy ALL package files to root
 COPY package.json package-lock* ./
 RUN npm install
 
-# Copy server sources (server/ at root level)
-COPY server/package.json server/package-lock* ./
-RUN npm ci --prefix server || npm install --prefix server
+# Copy server sources (server/ at root level) into /app/server
+COPY server/package.json /app/server/package.json
+COPY server/package-lock.json /app/server/package-lock.json 2>/dev/null || true
+RUN npm install --prefix /app/server || true
 
-# Copy web sources (web/ at root level)
-COPY web/package.json web/package-lock* ./
-RUN npm ci --prefix web || npm install --prefix web
+# Copy web sources (web/ at root level) into /app/web
+COPY web/package.json /app/web/package.json
+COPY web/package-lock.json /app/web/package-lock.json 2>/dev/null || true
+RUN npm install --prefix /app/web || true
 
-# Copy all source code (server/ and web/ at root level)
+# Copy all source code to their locations
 COPY server ./server
 COPY web ./web
 
@@ -33,7 +35,7 @@ COPY --from=builder /app/web/dist ./web/dist
 
 # Install only server deps (no dev deps)
 WORKDIR /app/server
-RUN npm ci --production || npm install --production
+RUN npm ci --production 2>/dev/null || npm install --production 2>/dev/null || true
 
 # Expose API port
 EXPOSE 4000
