@@ -39,6 +39,8 @@ export interface RoutineItem {
   optional: boolean;
   dose?: string;
   done?: boolean;
+  image?: string;
+  accent?: string;
 }
 
 export interface Routine {
@@ -144,6 +146,7 @@ export interface Product {
   reviews: number;
   accent: string;
   evidence: string;
+  image?: string;
   reviewsList?: Review[];
 }
 

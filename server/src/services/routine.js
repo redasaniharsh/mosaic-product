@@ -191,12 +191,16 @@ export const activeRoutine = (userId) =>
 
 export const routineItems = (userId, week) => {
   const rows = all(
-    'SELECT * FROM routine_items WHERE user_id = ? AND active = 1 ORDER BY step ASC, name ASC',
+    `SELECT ri.*, p.image, p.accent, p.form, p.size, p.tagline
+     FROM routine_items ri
+     LEFT JOIN products p ON ri.product_slug = p.slug
+     WHERE ri.user_id = ? AND ri.active = 1
+     ORDER BY ri.step ASC, ri.name ASC`,
     userId
   );
   return rows
     .filter((r) => r.week_start <= week)
-    .map((r) => ({ ...r, optional: Boolean(r.optional), dose: doseFor(r.product_slug) }));
+    .map((r) => ({ ...r, optional: Boolean(r.optional), dose: defaultDose(r.form, r.size) }));
 };
 
 const doseFor = (slug) => {

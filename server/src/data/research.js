@@ -16,6 +16,7 @@ export const RESEARCH = {
     {
       code: 'C1',
       name: 'Raj Gandhi',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=240&h=240&q=80',
       phone: '7410500109',
       age: 26,
       city: 'Ahmedabad',
@@ -50,6 +51,7 @@ export const RESEARCH = {
     {
       code: 'C2',
       name: 'Shreyans Jain',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&h=240&q=80',
       phone: '9518705240',
       age: 24,
       city: 'Indore',
@@ -84,6 +86,7 @@ export const RESEARCH = {
     {
       code: 'C3',
       name: 'Manan Sancheti',
+      avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=240&h=240&q=80',
       phone: '7058607951',
       age: 27,
       city: 'Pune',
@@ -118,6 +121,7 @@ export const RESEARCH = {
     {
       code: 'C4',
       name: 'Harsh Redasani',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=240&h=240&q=80',
       phone: '7709563712',
       age: 23,
       city: 'Surat',
@@ -152,6 +156,7 @@ export const RESEARCH = {
     {
       code: 'C5',
       name: 'Chandan Singh',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&h=240&q=80',
       phone: '7400116050',
       age: 29,
       city: 'Lucknow',

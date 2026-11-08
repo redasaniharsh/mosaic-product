@@ -18,15 +18,15 @@ const mulberry32 = (seed) => () => {
 const seedProducts = () => {
   PRODUCTS.forEach((p) => {
     run(
-      `INSERT INTO products (slug, name, category, form, tagline, description, price, mrp, size, actives, concerns, step, time_of_day, cadence, instructions, cautions, rating, reviews, accent, evidence, active)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
+      `INSERT INTO products (slug, name, category, form, tagline, description, price, mrp, size, actives, concerns, step, time_of_day, cadence, instructions, cautions, rating, reviews, accent, evidence, image, active)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
        ON CONFLICT(slug) DO UPDATE SET
          name=excluded.name, category=excluded.category, form=excluded.form, tagline=excluded.tagline,
          description=excluded.description, price=excluded.price, mrp=excluded.mrp, size=excluded.size,
          actives=excluded.actives, concerns=excluded.concerns, step=excluded.step,
          time_of_day=excluded.time_of_day, cadence=excluded.cadence, instructions=excluded.instructions,
          cautions=excluded.cautions, rating=excluded.rating, reviews=excluded.reviews,
-         accent=excluded.accent, evidence=excluded.evidence, active=1`,
+         accent=excluded.accent, evidence=excluded.evidence, image=excluded.image, active=1`,
       p.slug,
       p.name,
       p.category,
@@ -46,7 +46,8 @@ const seedProducts = () => {
       p.rating,
       p.reviews,
       p.accent,
-      p.evidence
+      p.evidence,
+      p.image
     );
   });
 };
@@ -274,7 +275,13 @@ const createDemo = async () => {
     });
   });
 
-  [0, 14, 28].forEach((offset) => {
+  const demoPhotos = [
+    'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1585751119414-ef2636f8aede?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=800&q=80'
+  ];
+
+  [0, 14, 28].forEach((offset, idx) => {
     const date = addDays(start, offset);
     run(
       'INSERT INTO photos (id, user_id, date, week, angle, data_url, lighting, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?)',
@@ -283,9 +290,13 @@ const createDemo = async () => {
       date,
       Math.floor(offset / 7) + 1,
       'crown',
-      svgPlate(Math.floor(offset / 7) + 1, offset === 0 ? 'early' : offset === 14 ? 'mid' : 'late'),
-      76,
-      offset === 0 ? 'Baseline. Bathroom light, dry hair.' : 'Same bathroom, same angle, morning light.',
+      demoPhotos[idx] || svgPlate(Math.floor(offset / 7) + 1, offset === 0 ? 'early' : offset === 14 ? 'mid' : 'late'),
+      84,
+      offset === 0
+        ? 'Baseline crown photo. Standard daylight, dry scalp.'
+        : offset === 14
+        ? 'Week 3 check: shedding phase underway, standard angle.'
+        : 'Week 5 check: shedding down, follicle activation visible.',
       nowIso()
     );
   });

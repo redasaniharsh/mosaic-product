@@ -27,7 +27,9 @@ publicRouter.get('/site', (_req, res) => {
     },
     patterns: patterns.slice(0, 6),
     quotes: RESEARCH.customers.map((c) => ({
+      code: c.code,
       name: `${c.name.split(' ')[0]} ${c.name.split(' ').slice(1).map((p) => `${p[0]}.`).join(' ')}`.trim(),
+      avatar: c.avatar,
       city: c.city,
       tenure: c.tenure,
       quote: c.quote,
@@ -51,7 +53,8 @@ publicRouter.get('/site', (_req, res) => {
       rating: p.rating,
       reviews: p.reviews,
       accent: p.accent,
-      form: p.form
+      form: p.form,
+      image: p.image
     }))
   });
 });
