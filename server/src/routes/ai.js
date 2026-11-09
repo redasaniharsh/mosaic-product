@@ -97,6 +97,7 @@ aiRouter.post('/chat', requireAuth, async (req, res) => {
     });
     full = result.text;
     usedProvider = result.provider;
+    if (usedProvider === 'scope-guard') mode = 'guard';
     if (!full.trim()) throw new Error('empty-completion');
   } catch (err) {
     mode = 'rules';

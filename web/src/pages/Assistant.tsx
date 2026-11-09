@@ -36,6 +36,7 @@ const PROVIDER_LABEL = (p?: string) => {
   if (!p) return 'rules engine';
   if (p.startsWith('gemini')) return 'Gemini 2.5 Flash';
   if (p.startsWith('nvidia')) return 'Nemotron 550B';
+  if (p === 'scope-guard') return 'Companion guide';
   return p;
 };
 
@@ -321,6 +322,9 @@ export default function Assistant() {
                   Shedding panic, a missed week, a side effect, or doubt about whether any of this is working. It answers with
                   your numbers, not a blog post.
                 </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-white/60 px-3 py-1 text-[10px] text-muted">
+                  <ShieldCheck className="h-3 w-3" /> Scoped to your routine — no general chatbot answers
+                </div>
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
                   {SUGGESTIONS.map((s) => (
                     <button
@@ -367,6 +371,11 @@ export default function Assistant() {
                     {!m.streaming && m.role === 'assistant' && m.meta?.mode === 'rules' && (
                       <div className="mt-2 border-t border-line pt-1.5 text-[9.5px] uppercase tracking-[0.12em] text-muted/70">
                         deterministic coach · providers unavailable
+                      </div>
+                    )}
+                    {!m.streaming && m.role === 'assistant' && m.meta?.mode === 'guard' && (
+                      <div className="mt-2 border-t border-line pt-1.5 text-[9.5px] uppercase tracking-[0.12em] text-muted/70">
+                        scoped to your programme
                       </div>
                     )}
                   </div>

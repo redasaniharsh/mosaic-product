@@ -48,9 +48,68 @@ const RED_FLAGS = [
   'fever'
 ];
 
+/* ------------------------------ Scope guard ------------------------------- */
+/**
+ * The coach is deliberately narrow: it answers only about this user's 90-day
+ * programme. These checks run before any model call, so an off-topic request
+ * can never turn into a generic chatbot answer — it always returns a short,
+ * on-brand reply that steers back to the routine.
+ */
+
+const GREETING = /^(hi|hey|hello|yo|hola|namaste|good\s+(morning|afternoon|evening)|thanks|thank\s+you|ok|okay|cool)\W*$/i;
+
+const ON_TOPIC =
+  /\b(hair|beard|skin|scalp|face|acne|pimple|dandruff|serum|shampoo|tablet|gumm(?:y|ies)|supplement|biotin|minoxidil|redensyl|procapil|retinol|sunscreen|moisturi[sz]|routine|plan|programme|week|phase|dose|step|refill|product|stack|order|delivery|adherence|streak|check[- ]?in|progress|photo|sleep|stress|diet|food|protein|water|workout|gym|energy|tired|itch|burn|irritat|side[- ]?effect|rash|patch|bleed|pus|pain|lump|fever|doctor|clinician|derm|review|escalat|man\s+matters|companion|coach|shedding|growth|density|thinning|receding|bald|moustache|shave|weight|belly|fat|testosterone|performance|intimate|delay|wash|apply|morning|night)\b/i;
+
+// Unambiguous requests outside the product. These win over any stray keyword.
+const HARD_OFF_TOPIC = [
+  /\b(write|give|make|generate|create|build)\b[\s\S]{0,25}\b(code|program|script|function|poem|story|joke|essay|email|letter|song|lyrics|rap|resume|cv)\b/i,
+  /\b(tell|say|recite|sing)\b[\s\S]{0,15}\b(joke|story|poem|quote|riddle|song|lyrics|rap)\b/i,
+  /\b(joke|riddle|horoscope|astrology|zodiac)\b/i,
+  /```/,
+  /\b(python|javascript|typescript|html|css|sql|php|c\+\+|rust|golang|swift|kotlin)\b/i,
+  /\btranslate\b/i
+];
+
+// General-knowledge topics: only blocked when no programme keyword is present.
+const SOFT_OFF_TOPIC = [
+  /\b(president|prime\s+minister|election|politics|political|capital\s+of|world\s+war|religion)\b/i,
+  /\b(cricket|football|soccer|ipl|fifa|match\s+score|world\s+cup|movie|film|bollywood|hollywood|actor|actress|netflix)\b/i,
+  /\b(stock|share\s+market|sensex|nifty|crypto|bitcoin|ethereum|invest(?:ment|ing)?|mutual\s+fund|loan|\btax\b|gst|salary|finance|insurance)\b/i,
+  /\b(weather|news|headline|recipe)\b/i,
+  /\b(solve|calculate|equation|derivative|integral)\b/i
+];
+
+const isOffTopic = (message) => {
+  const text = String(message);
+  if (HARD_OFF_TOPIC.some((re) => re.test(text))) return true;
+  if (ON_TOPIC.test(text)) return false;
+  return SOFT_OFF_TOPIC.some((re) => re.test(text));
+};
+
+const scopeReply = (ctx) => {
+  const week = ctx?.routine?.week || 1;
+  const a7 = ctx?.stats?.adherence7 ?? 0;
+  return `I stay inside your 90-day programme, so I cannot help with that one. My job is your routine, your products, shedding, side effects, sleep, stress and progress photos.\n\nYou are on week ${week} of 13 at ${a7}% adherence. Ask me something like "why is my hair falling more?", "I missed four days, should I double up?", or "how do I compare photos properly?" and I will answer with your own numbers.`;
+};
+
+const greetingReply = (ctx) => {
+  const week = ctx?.routine?.week || 1;
+  const a7 = ctx?.stats?.adherence7 ?? 0;
+  return `Hey. You are on week ${week} of 13, with ${a7}% adherence over the last 7 days.\n\nWhat is on your mind — shedding, a missed dose, a side effect, or doubt about whether any of this is working?`;
+};
+
+const emitChunks = (text, onToken) => {
+  if (!onToken) return;
+  for (const chunk of text.match(/.{1,40}(\s|$)/g) || [text]) onToken(chunk);
+};
+
 const SYSTEM = `You are the Man Matters Companion coach — a calm, specific, evidence-aware guide for Indian men on a 90-day hair, beard or skin routine.
 
 Voice: direct, warm, never salesy. Short paragraphs. No emojis. No exclamation marks. Do not open with the user's name. You sound like a good clinician who respects the user's time.
+
+Scope (most important):
+0. You only discuss this user's 90-day grooming programme: hair, beard, skin, the products in their routine, adherence, side effects, sleep, stress, nutrition as it affects their goal, progress photos, and how to use this app. If asked anything outside that — coding, news, politics, sports, money, general knowledge, creative writing, translations, or a medical diagnosis — reply in one short sentence that you are their routine coach and cannot help with that, then offer to answer a routine question. Never produce code, essays, jokes, letters or general facts. If a request is ambiguous, ask one clarifying question about their routine instead of guessing.
 
 Hard rules:
 1. Ground every claim in the USER CONTEXT block (their adherence, week, logged hair fall, sleep, products). Quote their own numbers instead of generic advice.
@@ -295,6 +354,21 @@ export const generate = async ({ system, messages, json = false, temperature = 0
 };
 
 export const streamChat = async ({ history, message, ctx, onToken }) => {
+  const raw = String(message || '').trim();
+
+  // Greetings and off-topic requests never reach the model. They get a short,
+  // on-brand reply so the presenter and the user always see coherent text.
+  if (GREETING.test(raw)) {
+    const text = greetingReply(ctx);
+    emitChunks(text, onToken);
+    return { text, provider: 'scope-guard' };
+  }
+  if (isOffTopic(raw)) {
+    const text = scopeReply(ctx);
+    emitChunks(text, onToken);
+    return { text, provider: 'scope-guard' };
+  }
+
   const { text, provider, partial } = await generate({
     system: SYSTEM,
     messages: [
@@ -405,7 +479,12 @@ const hasRedFlag = (text) => {
  * over the user's numbers, so the UI never shows a canned marketing answer.
  */
 export const fallbackCoach = (message, ctx) => {
-  const text = message.toLowerCase();
+  const raw = String(message || '');
+
+  if (GREETING.test(raw.trim())) return greetingReply(ctx);
+  if (isOffTopic(raw)) return scopeReply(ctx);
+
+  const text = raw.toLowerCase();
   const week = ctx?.routine?.week || 1;
   const a7 = ctx?.stats?.adherence7 ?? 0;
   const a30 = ctx?.stats?.adherence30 ?? 0;
@@ -428,12 +507,12 @@ export const fallbackCoach = (message, ctx) => {
     return `The honest test is a like-for-like photo, not a feeling. Same room, same light, same angle, hair at the same length.\n\nYou are on week ${week} of 13 — the photographable window opens around week 9. Until then the only reliable signal is adherence, and yours is ${a7}%.`;
   }
 
-  if (/which|product|add|buy|serum|tablet|biotin/.test(text)) {
-    return `Your current stack is already mapped to your primary concern. Adding another active before week 8 makes it impossible to tell what is working — and if something irritates your scalp, impossible to know what caused it.\n\nGive this stack a clean 8 weeks at 70%+ adherence, then review with the data. You are at ${a7}% this week, ${a30}% across the month.`;
+  if (/side.?effect|itch|burn|\bred\b|redness|irritat|rash|swelling|sting/.test(text)) {
+    return `Stop the active for 48 hours and note whether the reaction settles. If it returns when you restart, that product is not for your scalp or skin — do not push through it.\n\nBook a doctor review in the Assistant tab and mention the exact product and when the reaction started.`;
   }
 
-  if (/side effect|itch|burn|red|irritat/.test(text)) {
-    return `Stop the active for 48 hours and note whether the itching settles. If it returns when you restart, that product is not for your scalp — do not push through it.\n\nBook a doctor review in the Assistant tab and mention the exact product and when the reaction started.`;
+  if (/which|product|add|buy|serum|tablet|biotin/.test(text)) {
+    return `Your current stack is already mapped to your primary concern. Adding another active before week 8 makes it impossible to tell what is working — and if something irritates your scalp, impossible to know what caused it.\n\nGive this stack a clean 8 weeks at 70%+ adherence, then review with the data. You are at ${a7}% this week, ${a30}% across the month.`;
   }
 
   if (/sleep|stress|tired|energy/.test(text)) {
