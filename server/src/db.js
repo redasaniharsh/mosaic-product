@@ -3,11 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToF(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(process.env.DB_DIR || path.join(__dirname, '..', 'data'));
 fs.mkdirSync(dataDir, { recursive: true });
 
-export const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, 'companion.db'));
+const dbPath = process.env.DB_PATH || path.join(dataDir, 'companion.db');
+
+export const db = new DatabaseSync(dbPath);
 
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
@@ -28,96 +30,142 @@ CREATE TABLE IF NOT EXISTS users (
   beard_type TEXT,
   diet TEXT,
   sleep_hours REAL,
+  stress INTEGER,
+  answers TEXT,
+  plan TEXT,
+  onboarded INTEGER NOT NULL DEFAULT 0,
+  role TEXT NOT NULL DEFAULT 'member',
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS checkins (
+CREATE TABLE IF NOT EXISTS products (
+  slug TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  form TEXT,
+  tagline TEXT,
+  description TEXT,
+  price INTEGER,
+  mrp INTEGER,
+  size TEXT,
+  actives TEXT,
+  concerns TEXT,
+  step INTEGER,
+  time_of_day TEXT,
+  cadence TEXT,
+  instructions TEXT,
+  cautions TEXT,
+  rating REAL,
+  reviews INTEGER,
+  accent TEXT,
+  evidence TEXT,
+  image TEXT,
+  active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS routines (
   id TEXT PRIMARY KEY,
-  user_id TEXT,
-  hair_fall INTEGER,
-  sleep_quality INTEGER,
-  stress_level INTEGER,
-  water_logging INTEGER,
-  date TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL DEFAULT 1,
+  start_date TEXT NOT NULL,
+  duration_days INTEGER NOT NULL DEFAULT 90,
+  headline TEXT,
+  rationale TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS routine_items (
   id TEXT PRIMARY KEY,
-  user_id TEXT,
-  week_number INTEGER,
-  active BOOLEAN DEFAULT true,
+  routine_id TEXT NOT NULL REFERENCES routines(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_slug TEXT NOT NULL,
+  name TEXT NOT NULL,
+  step INTEGER,
+  time_of_day TEXT,
+  cadence TEXT,
+  week_start INTEGER,
+  week_end INTEGER,
+  phase INTEGER,
+  instructions TEXT,
+  optional INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS checkins (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date TEXT NOT NULL,
+  taken TEXT NOT NULL DEFAULT '[]',
+  hair_fall INTEGER,
+  sleep_hours REAL,
+  water INTEGER,
+  stress INTEGER,
+  mood TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_id, date)
+);
+
+CREATE TABLE IF NOT EXISTS photos (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date TEXT NOT NULL,
+  week INTEGER,
+  angle TEXT,
+  data_url TEXT NOT NULL,
+  lighting INTEGER,
+  notes TEXT,
   created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
-  user_id TEXT,
-  role TEXT,
-  content TEXT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  meta TEXT,
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS photos (
+CREATE TABLE IF NOT EXISTS insights (
   id TEXT PRIMARY KEY,
-  user_id TEXT,
-  image_path TEXT,
-  date TEXT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  week INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  title TEXT,
+  body TEXT,
+  actions TEXT,
+  source TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_id, week, kind)
+);
+
+CREATE TABLE IF NOT EXISTS escalations (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL,
+  detail TEXT,
+  status TEXT NOT NULL DEFAULT 'queued',
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE IF NOT EXISTS events (
   id TEXT PRIMARY KEY,
-  slug TEXT UNIQUE NOT NULL,
+  user_id TEXT,
   name TEXT NOT NULL,
-  form TEXT NOT NULL,
-  tagline TEXT,
-  accent TEXT,
-  price REAL,
-  rating REAL,
-  review_count INTEGER,
-  description TEXT,
-  how_to_use TEXT,
-  key_benefits TEXT,
-  key_ingredients TEXT,
-  sustainability TEXT,
-  category TEXT,
-  gender TEXT,
-  season TEXT,
-  mrp REAL,
-  size TEXT,
-  actives TEXT,
-  concerns TEXT,
-  step TEXT,
-  time_of_day TEXT,
-  cadence TEXT,
-  instructions TEXT,
-  cautions TEXT,
-  reviews TEXT,
-  evidence TEXT,
-  image TEXT,
-  is_active INTEGER DEFAULT 1,
-  sort_order INTEGER DEFAULT 0,
+  props TEXT,
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS insight (
+CREATE TABLE IF NOT EXISTS reviews (
   id TEXT PRIMARY KEY,
-  user_id TEXT,
-  weekly_adherence REAL,
-  total_checkins INTEGER,
-  average_hair_fall REAL,
-  average_sleep REAL,
-  average_stress REAL,
-  created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS weekly_reviews (
-  id TEXT PRIMARY KEY,
-  user_id TEXT,
-  week_number INTEGER,
-  adherence_percentage REAL,
-  summary_text TEXT,
+  source TEXT,
+  product_slug TEXT,
+  rating INTEGER,
+  text TEXT,
+  theme TEXT,
+  sentiment TEXT,
   created_at TEXT NOT NULL
 );
 
@@ -127,109 +175,13 @@ CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_photos_user ON photos(user_id, date);
 `);
 
-function migrateProductsTable() {
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN image TEXT');
-    stmt.run();
-    console.log('Products table migration: image column added');
-  } catch (e) {
-    console.log('Products table: image column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN slug TEXT');
-    stmt.run();
-    console.log('Products table migration: slug column added');
-  } catch (e) {
-    console.log('Products table: slug column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN tagline TEXT');
-    stmt.run();
-    console.log('Products table migration: tagline column added');
-  } catch (e) {
-    console.log('Products table: tagline column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN mrp REAL');
-    stmt.run();
-    console.log('Products table migration: mrp column added');
-  } catch (e) {
-    console.log('Products table: mrp column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN size TEXT');
-    stmt.run();
-    console.log('Products table migration: size column added');
-  } catch (e) {
-    console.log('Products table: size column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN actives TEXT');
-    stmt.run();
-    console.log('Products table migration: actives column added');
-  } catch (e) {
-    console.log('Products table: actives column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN concerns TEXT');
-    stmt.run();
-    console.log('Products table migration: concerns column added');
-  } catch (e) {
-    console.log('Products table: concerns column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN step TEXT');
-    stmt.run();
-    console.log('Products table migration: step column added');
-  } catch (e) {
-    console.log('Products table: step column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN time_of_day TEXT');
-    stmt.run();
-    console.log('Products table migration: time_of_day column added');
-  } catch (e) {
-    console.log('Products table: time_of_day column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN cadence TEXT');
-    stmt.run();
-    console.log('Products table migration: cadence column added');
-  } catch (e) {
-    console.log('Products table: cadence column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN instructions TEXT');
-    stmt.run();
-    console.log('Products table migration: instructions column added');
-  } catch (e) {
-    console.log('Products table: instructions column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN cautions TEXT');
-    stmt.run();
-    console.log('Products table migration: cautions column added');
-  } catch (e) {
-    console.log('Products table: cautions column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN reviews TEXT');
-    stmt.run();
-    console.log('Products table migration: reviews column added');
-  } catch (e) {
-    console.log('Products table: reviews column already exists or migration skipped');
-  }
-  try {
-    const stmt = db.prepare('ALTER TABLE products ADD COLUMN evidence TEXT');
-    stmt.run();
-    console.log('Products table migration: evidence column added');
-  } catch (e) {
-    console.log('Products table: evidence column already exists or migration skipped');
-  }
+// Migration for databases created before the products.image column existed.
+// Fresh databases already have it from the CREATE TABLE above.
+try {
+  db.prepare('ALTER TABLE products ADD COLUMN image TEXT').run();
+} catch {
+  // Column already exists — safe to ignore.
 }
-
-// Run migrations on module load
-migrateProductsTable();
 
 export const all = (sql, ...params) => db.prepare(sql).all(...params);
 export const get = (sql, ...params) => db.prepare(sql).get(...params);
@@ -255,3 +207,9 @@ export const tx = (fn) => {
     throw err;
   }
 };
+
+db.all = all;
+db.get = get;
+db.run = run;
+db.parse = parse;
+db.tx = tx;
