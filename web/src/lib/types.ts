@@ -218,6 +218,7 @@ export interface SiteData {
     reviews: number;
     accent: string;
     form: string;
+    image?: string;
   }[];
 }
 

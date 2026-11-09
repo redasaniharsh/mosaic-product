@@ -65,6 +65,8 @@ export default function Progress() {
   const [compareBusy, setCompareBusy] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [viewPhoto, setViewPhoto] = useState<{ id: string; url: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -86,6 +88,32 @@ export default function Progress() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // The progress payload is metadata-only, so pull the six visible frames on
+  // demand instead of shipping every base64 image with the page.
+  useEffect(() => {
+    const photos = data?.photos;
+    if (!photos?.length) return;
+    let cancelled = false;
+    const visible = [...photos].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+    Promise.all(
+      visible.map(async (p) => {
+        try {
+          const res = await appApi.photo(p.id);
+          return res?.data_url ? ([p.id, res.data_url] as const) : null;
+        } catch {
+          return null;
+        }
+      })
+    ).then((entries) => {
+      if (cancelled) return;
+      const loaded = Object.fromEntries(entries.filter((e): e is readonly [string, string] => Boolean(e)));
+      if (Object.keys(loaded).length) setThumbs((prev) => ({ ...prev, ...loaded }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.photos]);
 
   const score = data?.score;
   const adherence30 = useMemo(() => {
@@ -397,6 +425,22 @@ export default function Progress() {
                         </button>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => thumbs[p.id] && setViewPhoto({ id: p.id, url: thumbs[p.id] })}
+                      className="mt-2 block w-full overflow-hidden rounded-lg border border-line bg-ink/[0.04]"
+                      aria-label={`View week ${p.week} photo`}
+                    >
+                      {thumbs[p.id] ? (
+                        <img
+                          src={thumbs[p.id]}
+                          alt={`Week ${p.week} · ${ANGLE_LABEL[p.angle] || p.angle}`}
+                          className="aspect-[16/10] w-full object-cover transition duration-500 hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="aspect-[16/10] w-full skeleton" />
+                      )}
+                    </button>
                     {p.notes && <p className="mt-2 line-clamp-2 text-[10.5px] leading-relaxed text-muted">{p.notes}</p>}
                     {p.lighting != null && (
                       <div className="mt-2 flex items-center gap-1 text-[9.5px] text-muted/80">
@@ -542,6 +586,23 @@ export default function Progress() {
             Close
           </Btn>
         </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(viewPhoto)}
+        onClose={() => setViewPhoto(null)}
+        title={
+          viewPhoto
+            ? `Week ${photoMetaById[viewPhoto.id]?.week ?? '—'} · ${
+                ANGLE_LABEL[photoMetaById[viewPhoto.id]?.angle] || photoMetaById[viewPhoto.id]?.angle || 'Photo'
+              }`
+            : 'Photo'
+        }
+        width="max-w-xl"
+      >
+        {viewPhoto && (
+          <img src={viewPhoto.url} alt="Progress photo" className="max-h-[68vh] w-full rounded-xl bg-ink object-contain" />
+        )}
       </Modal>
 
       <FooterNote />

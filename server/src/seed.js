@@ -275,13 +275,9 @@ const createDemo = async () => {
     });
   });
 
-  const demoPhotos = [
-    'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1585751119414-ef2636f8aede?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=800&q=80'
-  ];
-
-  [0, 14, 28].forEach((offset, idx) => {
+  // Self-contained SVG plates instead of hotlinked stock photos, so the demo
+  // comparison always renders — including offline and on an ephemeral host.
+  [0, 14, 28].forEach((offset) => {
     const date = addDays(start, offset);
     run(
       'INSERT INTO photos (id, user_id, date, week, angle, data_url, lighting, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?)',
@@ -290,7 +286,7 @@ const createDemo = async () => {
       date,
       Math.floor(offset / 7) + 1,
       'crown',
-      demoPhotos[idx] || svgPlate(Math.floor(offset / 7) + 1, offset === 0 ? 'early' : offset === 14 ? 'mid' : 'late'),
+      svgPlate(Math.floor(offset / 7) + 1, offset === 0 ? 'early' : offset === 14 ? 'mid' : 'late'),
       84,
       offset === 0
         ? 'Baseline crown photo. Standard daylight, dry scalp.'

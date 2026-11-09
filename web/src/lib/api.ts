@@ -89,7 +89,7 @@ export const appApi = {
     return api.get<{ products: Product[] }>(`/app/products${qs.toString() ? `?${qs}` : ''}`);
   },
   product: (slug: string) => api.get<{ product: Product; reviews: any[] }>(`/app/products/${slug}`),
-  review: (refresh = false) => api.post<{ insight: Insight; signals?: any[] }>('/app/ai/review', { refresh }),
+  review: (refresh = false) => api.post<{ insight: Insight; signals?: any[] }>('/ai/review', { refresh }),
   weeklyInsight: () => api.get<{ insight: Insight | null }>('/app/insights/weekly'),
   escalate: (payload: { reason: string; detail?: string }) =>
     api.post<{ id: string; status: string; sla: string; prep: string[] }>('/app/escalations', payload),

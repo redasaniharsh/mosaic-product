@@ -22,6 +22,7 @@ import { appApi } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import type { DayItem, Insight, Overview, SeriesPoint, Signal } from '../lib/types';
 import { PageHeader, FooterNote } from '../components/AppShell';
+import { ProductImage } from '../components/ProductImage';
 import { AdherenceChart, TrendChart } from '../components/Charts';
 import { Btn, Card, CheckBox, Chip, Empty, Field, Input, Meter, Ring, Select, Skeleton } from '../components/ui';
 import { cn, greeting, inr, prettyDate, weekday } from '../lib/utils';
@@ -251,8 +252,16 @@ export default function Dashboard() {
                   disabled={busyItem === item.id}
                   label={
                     <span className="flex items-center gap-2">
-                      {item.name}
-                      {item.optional && <span className="rounded bg-ink/5 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted">optional</span>}
+                      <ProductImage
+                        src={item.image}
+                        alt={item.name}
+                        accent={item.accent}
+                        className="h-6 w-6 shrink-0 rounded-[5px] border border-line"
+                      />
+                      <span className="flex items-center gap-2">
+                        {item.name}
+                        {item.optional && <span className="rounded bg-ink/5 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-muted">optional</span>}
+                      </span>
                     </span>
                   }
                   sub={`${item.time_of_day} · ${item.dose || item.cadence}${item.step ? ` · step ${item.step}` : ''}`}

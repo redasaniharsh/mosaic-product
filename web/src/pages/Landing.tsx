@@ -19,6 +19,7 @@ import { publicApi } from '../lib/api';
 import type { SiteData } from '../lib/types';
 import { cadenceLabel, cn, compact, inr } from '../lib/utils';
 import { Chip, Logo, Ring, Skeleton } from '../components/ui';
+import { ProductImage } from '../components/ProductImage';
 import { useAuth } from '../lib/auth';
 
 const SectionHead = ({
@@ -613,12 +614,18 @@ export default function Landing() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {(site?.featured || []).map((p) => (
-                <div key={p.slug} className="card group overflow-hidden">
-                  <div className="relative flex h-28 items-end p-4" style={{ background: `linear-gradient(150deg, ${p.accent} 0%, #0B0C0E 120%)` }}>
-                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/50">{p.category}</span>
-                    <span className="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-[9.5px] text-white/80 backdrop-blur">★ {p.rating}</span>
-                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full border border-white/15" />
-                    <div className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 rounded-full border border-white/10" />
+                <div key={p.slug} className="card group overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lift">
+                  <div className="relative h-36 w-full overflow-hidden">
+                    <ProductImage
+                      src={p.image}
+                      alt={p.name}
+                      accent={p.accent}
+                      className="absolute inset-0 h-full w-full"
+                      imgClassName="transition duration-700 group-hover:scale-[1.05]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-ink/25" />
+                    <span className="absolute bottom-3 left-4 font-mono text-[9px] uppercase tracking-[0.16em] text-white/70">{p.category}</span>
+                    <span className="absolute right-3 top-3 rounded-full border border-white/15 bg-ink/40 px-2 py-0.5 text-[9.5px] text-white/85 backdrop-blur">★ {p.rating}</span>
                   </div>
                   <div className="p-4">
                     <h4 className="text-[13px] font-medium leading-snug">{p.name}</h4>

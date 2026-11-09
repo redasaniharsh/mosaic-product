@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { appApi } from '../lib/api';
 import { PageHeader, FooterNote } from '../components/AppShell';
+import { ProductImage } from '../components/ProductImage';
 import { Btn, Card, CheckBox, Chip, Empty, Field, Meter, Modal, Skeleton } from '../components/ui';
 import type { RoutineItem, UserPlan } from '../lib/types';
 import { cadenceLabel, cn, prettyDate } from '../lib/utils';
@@ -184,6 +185,12 @@ export default function Routine() {
                     {item.step ?? '·'}
                   </span>
                 )}
+                <ProductImage
+                  src={item.image}
+                  alt={item.name}
+                  accent={item.accent}
+                  className="mt-0.5 h-10 w-10 shrink-0 rounded-lg border border-line"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={cn('text-[13px] font-medium', week === data.week && done.has(item.id) && 'text-forest')}>{item.name}</span>

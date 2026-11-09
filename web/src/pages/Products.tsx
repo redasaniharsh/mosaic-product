@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { appApi, publicApi } from '../lib/api';
 import { PageHeader, FooterNote } from '../components/AppShell';
+import { ProductImage } from '../components/ProductImage';
 import { Btn, Card, Chip, Empty, Field, Input, Modal, Select, Skeleton } from '../components/ui';
 import type { Product, Review, SiteData } from '../lib/types';
 import { cn, compact, inr } from '../lib/utils';
@@ -193,21 +194,30 @@ export default function Products() {
                 <Card key={p.slug} className="group flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lift">
                   <button
                     onClick={() => openDetail(p.slug)}
-                    className="relative flex h-32 items-end p-4 text-left"
-                    style={{ background: `linear-gradient(150deg, ${p.accent} 0%, #0B0C0E 115%)` }}
+                    className="relative block h-40 w-full overflow-hidden text-left"
+                    aria-label={`View details for ${p.name}`}
                   >
-                    <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full border border-white/15" />
-                    <div className="pointer-events-none absolute -right-2 -top-2 h-20 w-20 rounded-full border border-white/10" />
-                    <div className="relative">
-                      <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/55">{p.category}</span>
-                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-white/80">
+                    <ProductImage
+                      src={p.image}
+                      alt={p.name}
+                      accent={p.accent}
+                      className="absolute inset-0 h-full w-full"
+                      imgClassName="transition duration-700 group-hover:scale-[1.05]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-ink/30" />
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/65">{p.category}</span>
+                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-white/85">
                         <Star className="h-3 w-3 fill-lime text-lime" /> {p.rating}
                         <span className="text-white/40">·</span>
-                        <span className="text-white/55">{compact(p.reviews)} reviews</span>
+                        <span className="text-white/60">{compact(p.reviews)} reviews</span>
                       </div>
                     </div>
-                    <span className="absolute right-3 top-3 rounded-full bg-white/10 px-2 py-0.5 text-[9px] uppercase tracking-wide text-white/70 backdrop-blur">
+                    <span className="absolute right-3 top-3 rounded-full border border-white/15 bg-ink/40 px-2 py-0.5 text-[9px] uppercase tracking-wide text-white/80 backdrop-blur">
                       {p.form}
+                    </span>
+                    <span className="absolute bottom-3 right-3 grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-ink/40 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100">
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </span>
                   </button>
 
@@ -259,6 +269,25 @@ export default function Products() {
       <Modal open={Boolean(detail)} onClose={() => setDetail(null)} title={detail?.product.name} width="max-w-2xl">
         {detail && (
           <div className="max-h-[72vh] overflow-y-auto pr-1">
+            <div className="relative mb-4 overflow-hidden rounded-2xl border border-line">
+              <ProductImage
+                src={detail.product.image}
+                alt={detail.product.name}
+                accent={detail.product.accent}
+                className="h-40 w-full sm:h-48"
+                eager
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 p-4">
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/75">
+                  {detail.product.category} · {detail.product.form}
+                </span>
+                <span className="rounded-full border border-white/15 bg-ink/40 px-2 py-0.5 text-[9px] uppercase tracking-wide text-white/80 backdrop-blur">
+                  {detail.product.size}
+                </span>
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <Chip tone="lime">{detail.product.category}</Chip>
               <Chip>{detail.product.form}</Chip>

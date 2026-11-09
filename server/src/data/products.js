@@ -28,7 +28,7 @@ export const PRODUCTS = [
     rating: 4.3,
     reviews: 18420,
     accent: '#1F3D2B',
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
+    image: '/products/advanced-hair-growth-serum.jpg',
     evidence: 'Randomised trials on Redensyl and Procapil report visible density gains from week 8, with the strongest signal at week 12–16.'
   },
   {
@@ -52,7 +52,7 @@ export const PRODUCTS = [
     rating: 4.2,
     reviews: 9310,
     accent: '#2E4B3B',
-    image: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=800&q=80',
+    image: '/products/anti-hairfall-shampoo.jpg',
     evidence: 'Cleansing reduces follicular obstruction; caffeine has modest in-vitro follicle stimulation data.'
   },
   {
@@ -76,7 +76,7 @@ export const PRODUCTS = [
     rating: 4.4,
     reviews: 12680,
     accent: '#8A6A1F',
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80',
+    image: '/products/biotin-gummies.jpg',
     evidence: 'Useful only when intake is below requirement. Blood work is the honest way to know.'
   },
   {
@@ -100,7 +100,7 @@ export const PRODUCTS = [
     rating: 4.1,
     reviews: 5120,
     accent: '#6B4A2A',
-    image: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80',
+    image: '/products/hair-health-tablets.jpg',
     evidence: 'Saw palmetto has mixed but positive evidence in androgenetic alopecia over 12–24 weeks.'
   },
   {
@@ -124,7 +124,7 @@ export const PRODUCTS = [
     rating: 4.2,
     reviews: 7640,
     accent: '#5A3B22',
-    image: 'https://images.unsplash.com/photo-1629732047847-50219e9c5aef?auto=format&fit=crop&w=800&q=80',
+    image: '/products/beard-growth-oil.jpg',
     evidence: 'Rosemary oil has small-trial evidence comparable to 2% minoxidil over 6 months.'
   },
   {
@@ -148,7 +148,7 @@ export const PRODUCTS = [
     rating: 4.0,
     reviews: 3180,
     accent: '#3C3C3C',
-    image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?auto=format&fit=crop&w=800&q=80',
+    image: '/products/beard-growth-roller.jpg',
     evidence: 'Microneedling plus topical actives outperforms either alone in several beard and scalp studies.'
   },
   {
@@ -172,7 +172,7 @@ export const PRODUCTS = [
     rating: 4.3,
     reviews: 8920,
     accent: '#B35A1F',
-    image: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=800&q=80',
+    image: '/products/vitamin-c-serum.jpg',
     evidence: 'Topical vitamin C at 10%+ reduces pigmentation over 8–12 weeks in controlled studies.'
   },
   {
@@ -196,7 +196,7 @@ export const PRODUCTS = [
     rating: 4.1,
     reviews: 6410,
     accent: '#3A5A70',
-    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80',
+    image: '/products/under-eye-cream.jpg',
     evidence: 'Caffeine reduces short-term puffiness; niacinamide improves pigmentation over 8 weeks.'
   },
   {
@@ -220,7 +220,7 @@ export const PRODUCTS = [
     rating: 4.2,
     reviews: 4980,
     accent: '#2E5C4A',
-    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80',
+    image: '/products/acne-control-serum.jpg',
     evidence: '2% salicylic acid is a first-line OTC acne active with a 6–8 week response window.'
   },
   {
@@ -244,7 +244,7 @@ export const PRODUCTS = [
     rating: 4.1,
     reviews: 7310,
     accent: '#7A4A1F',
-    image: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=800&q=80',
+    image: '/products/testosterone-booster.jpg',
     evidence: 'Ashwagandha shows modest cortisol and testosterone changes in small trials; shilajit data is early.'
   },
   {
@@ -268,7 +268,7 @@ export const PRODUCTS = [
     rating: 4.0,
     reviews: 5620,
     accent: '#5B2E4A',
-    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+    image: '/products/delay-spray.jpg',
     evidence: 'Metered lidocaine sprays are clinically validated for PE; therapy plus spray works better than either.'
   },
   {
@@ -292,7 +292,7 @@ export const PRODUCTS = [
     rating: 4.4,
     reviews: 2140,
     accent: '#1F4A5C',
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80',
+    image: '/products/weight-loss-program.jpg',
     evidence: 'Structured coaching with monthly clinician review outperforms app-only plans in retention and weight loss.'
   },
   {
@@ -316,7 +316,7 @@ export const PRODUCTS = [
     rating: 4.2,
     reviews: 1180,
     accent: '#7A1F1F',
-    image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=800&q=80',
+    image: '/products/clock-cap.jpg',
     evidence: 'LLLT at 650 nm has FDA-cleared evidence in androgenetic alopecia over 16–26 weeks.'
   }
 ];
