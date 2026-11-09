@@ -17,7 +17,12 @@ const uniq = (arr) => [...new Set(arr.map((s) => s.trim()).filter(Boolean))];
 
 const geminiKeys = uniq([
   ...(process.env.GEMINI_API_KEYS || '').split(','),
-  process.env.GEMINI_API_KEY || ''
+  process.env.GEMINI_API_KEY || '',
+  // Aliases used by earlier deployment docs / Render blueprint.
+  process.env.GEMINI_KEY_1 || '',
+  process.env.GEMINI_KEY_2 || '',
+  process.env.GEMINI_KEY_3 || '',
+  process.env.GEMINI_KEY || ''
 ]);
 
 export const env = {
@@ -25,7 +30,11 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
   geminiKeys,
   geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-  nvidiaKey: process.env.NVIDIA_API_KEY || '',
+  nvidiaKey:
+    process.env.NVIDIA_API_KEY ||
+    process.env.NVIDIA_NEMOTOR_KEY ||
+    process.env.NVIDIA_KEY ||
+    '',
   nvidiaBase: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
   nvidiaModel: process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b'
 };
