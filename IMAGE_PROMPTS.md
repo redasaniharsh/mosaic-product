@@ -172,11 +172,19 @@ already in the folder, so nothing breaks if you skip this section.
 
 ## 4. After generating
 
-1. Copy each file into the folder with the **exact** filename above.
-2. Run `npm run build` in the repo root (or just commit — Render builds on push).
+1. Save each export into `image-drop/` using the **base name** above, e.g.
+   `image-drop/advanced-hair-growth-serum.png`. Any of `.png`, `.jpg` or
+   `.jpeg` works. Do not hand-crop or rename the final file — the importer
+   does that.
+2. Run `npm run images` (or `npm run images -- -Build` to also build). It
+   centre-crops to 1:1 or 4:5, resizes, compresses under ~300 KB and writes the
+   JPG into `web/public/products`, `web/public/avatars` or
+   `web/public/progress`.
 3. Check the four surfaces: landing page quotes and stack, Products grid and
    modal, Routine thumbnails, Progress gallery and compare slider.
 4. Commit and push. Render redeploys automatically.
+
+You can import in batches — files you have not supplied are left untouched.
 
 Priority if you only generate a few: `beard-growth-roller`,
 `weight-loss-program`, `clock-cap`, `acne-control-serum`, `testosterone-booster`

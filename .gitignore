@@ -21,6 +21,9 @@ server/uploads/
 # Demo progress frames and optional customer portraits ship with the app.
 !web/public/progress/*.jpg
 !web/public/avatars/*.jpg
+# Raw image-generator exports; the importer writes final files into web/public.
+image-drop/*
+!image-drop/README.md
 .DS_Store
 *.log
 docs/*.docx

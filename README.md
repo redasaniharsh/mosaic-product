@@ -57,8 +57,10 @@ All imagery is local and filename-addressed:
 - `web/public/videos/` — hero films and their posters.
 
 Ready-to-paste Gemini prompts, exact filenames and aspect ratios live in
-[IMAGE_PROMPTS.md](IMAGE_PROMPTS.md). A missing file returns a 404 and degrades
-to the branded fallback instead of a broken image.
+[IMAGE_PROMPTS.md](IMAGE_PROMPTS.md). Drop raw exports into `image-drop/` and run
+`npm run images` to crop, resize, compress and rename them automatically. A
+missing file returns a 404 and degrades to the branded fallback instead of a
+broken image.
 
 ## Demo Credentials
 | Role | Email | Password | Notes |
