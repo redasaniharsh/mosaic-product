@@ -234,10 +234,10 @@ export default function Landing() {
       <section id="evidence" className="border-y border-line bg-chalk py-20 lg:py-28">
         <div className="container-x">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <SectionHead eyebrow="From the conversations" title={<>What five customers actually said.</>} />
+            <SectionHead eyebrow="From the conversations" title={<>What the conversations actually said.</>} />
             <p className="text-[13px] leading-relaxed text-muted lg:pb-2">
               Names shortened for the public page; the full research document carries each customer's name, phone number,
-              products and verbatim notes. Patterns below are counted from the tagged conversations, not written by hand.
+              products and verbatim notes. The patterns below are counted from the tagged conversations, not written by hand.
             </p>
           </div>
 
@@ -266,11 +266,14 @@ export default function Landing() {
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {(site?.quotes || []).slice(3, 5).map((q) => (
-              <figure key={q.name} className="rounded-2xl border border-line bg-paper p-5">
-                <blockquote className="text-[13px] leading-relaxed text-ink/75">“{q.quote}”</blockquote>
-                <figcaption className="mt-3 text-[11px] text-muted">
-                  {q.name} · {q.city} · {q.tenure}
-                </figcaption>
+              <figure key={q.name} className="flex items-start gap-3 rounded-xl border border-line bg-paper px-4 py-3">
+                <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink/20" />
+                <div>
+                  <blockquote className="text-[12px] leading-relaxed text-ink/70">“{q.quote}”</blockquote>
+                  <figcaption className="mt-1 text-[10.5px] text-muted">
+                    {q.name} · {q.city}
+                  </figcaption>
+                </div>
               </figure>
             ))}
           </div>
