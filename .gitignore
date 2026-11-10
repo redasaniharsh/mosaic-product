@@ -13,6 +13,9 @@ server/uploads/
 # Product artwork ships with the app, so keep this folder despite the rules above.
 !web/public/products/
 !web/public/products/*.jpg
+# Hero product films (mp4) and their poster frames ship too.
+!web/public/videos/
+!web/public/videos/*.jpg
 .DS_Store
 *.log
 docs/*.docx
