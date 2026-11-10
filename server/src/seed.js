@@ -119,34 +119,6 @@ const seedReviews = () => {
   });
 };
 
-const svgPlate = (week, tone) => {
-  const tones = {
-    early: ['#101311', '#1d2a20', '#2c3f31'],
-    mid: ['#101311', '#23331f', '#3d5233'],
-    late: ['#0f1410', '#2b3d24', '#5d7a3c']
-  }[tone];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${tones[0]}"/><stop offset="0.55" stop-color="${tones[1]}"/><stop offset="1" stop-color="${tones[2]}"/>
-    </linearGradient>
-    <radialGradient id="r" cx="0.5" cy="0.42" r="0.55">
-      <stop offset="0" stop-color="#c6f24e" stop-opacity="0.20"/>
-      <stop offset="1" stop-color="#0b0c0b" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="640" height="800" fill="url(#g)"/>
-  <rect width="640" height="800" fill="url(#r)"/>
-  ${Array.from({ length: 9 })
-    .map((_, i) => `<ellipse cx="320" cy="410" rx="${90 + i * 26}" ry="${120 + i * 30}" fill="none" stroke="#c6f24e" stroke-opacity="${0.16 - i * 0.014}" stroke-width="1"/>`)
-    .join('')}
-  <rect x="0" y="742" width="640" height="58" fill="#0b0c0b" fill-opacity="0.62"/>
-  <text x="28" y="778" font-family="Helvetica,Arial" font-size="17" letter-spacing="3" fill="#f7f5f0" fill-opacity="0.86">WEEK ${String(week).padStart(2, '0')} · CROWN</text>
-  <text x="612" y="778" text-anchor="end" font-family="Helvetica,Arial" font-size="17" letter-spacing="3" fill="#c6f24e">DEMO</text>
-</svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-};
-
 const createDemo = async () => {
   const email = 'demo@manmatters.in';
   if (get('SELECT id FROM users WHERE email = ?', email)) return;
@@ -286,7 +258,7 @@ const createDemo = async () => {
       date,
       Math.floor(offset / 7) + 1,
       'crown',
-      svgPlate(Math.floor(offset / 7) + 1, offset === 0 ? 'early' : offset === 14 ? 'mid' : 'late'),
+      `/progress/crown-week-${String(Math.floor(offset / 7) + 1).padStart(2, '0')}.jpg`,
       84,
       offset === 0
         ? 'Baseline crown photo. Standard daylight, dry scalp.'

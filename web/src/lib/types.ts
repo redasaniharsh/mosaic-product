@@ -194,7 +194,7 @@ export interface SiteData {
   brand: { name: string; category: string; method: string; conductedAt: string };
   stats: { customers: number; products: number; checkins: number; routines: number; ai: boolean };
   patterns: { theme: string; label: string; count: number; share: number; customers: string[] }[];
-  quotes: { name: string; city: string; tenure: string; quote: string; themes: string[]; sentiment: number }[];
+  quotes: { name: string; avatar?: string; city: string; tenure: string; quote: string; themes: string[]; sentiment: number }[];
   chosenProblem: {
     title: string;
     statement: string;

@@ -20,6 +20,7 @@ import type { SiteData } from '../lib/types';
 import { cn, compact, inr } from '../lib/utils';
 import { Chip, Logo, Skeleton } from '../components/ui';
 import { ProductImage } from '../components/ProductImage';
+import { CustomerAvatar } from '../components/CustomerAvatar';
 import { HeroFilms } from '../components/HeroFilms';
 import { AppPreview } from '../components/AppPreview';
 import { useAuth } from '../lib/auth';
@@ -254,11 +255,12 @@ export default function Landing() {
                 <blockquote className={cn('mt-4 text-[14.5px] leading-relaxed', i === 0 ? 'text-paper/90' : 'text-ink/80')}>
                   {q.quote}
                 </blockquote>
-                <figcaption className={cn('mt-6 flex items-center justify-between text-[11px]', i === 0 ? 'text-paper/50' : 'text-muted')}>
-                  <span>
+                <figcaption className={cn('mt-6 flex items-center gap-2.5 text-[11px]', i === 0 ? 'text-paper/60' : 'text-muted')}>
+                  <CustomerAvatar src={q.avatar} name={q.name} tone={i === 0 ? 'dark' : 'light'} className="h-8 w-8" />
+                  <span className="min-w-0 flex-1 truncate">
                     {q.name} · {q.city}
                   </span>
-                  <span className={cn('rounded-full px-2 py-0.5', i === 0 ? 'bg-white/10' : 'bg-ink/5')}>{q.tenure}</span>
+                  <span className={cn('shrink-0 rounded-full px-2 py-0.5', i === 0 ? 'bg-white/10' : 'bg-ink/5')}>{q.tenure}</span>
                 </figcaption>
               </figure>
             ))}
@@ -270,8 +272,11 @@ export default function Landing() {
                 <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink/20" />
                 <div>
                   <blockquote className="text-[12px] leading-relaxed text-ink/70">“{q.quote}”</blockquote>
-                  <figcaption className="mt-1 text-[10.5px] text-muted">
-                    {q.name} · {q.city}
+                  <figcaption className="mt-1.5 flex items-center gap-1.5 text-[10.5px] text-muted">
+                    <CustomerAvatar src={q.avatar} name={q.name} className="h-5 w-5 border-forest/10" />
+                    <span>
+                      {q.name} · {q.city}
+                    </span>
                   </figcaption>
                 </div>
               </figure>

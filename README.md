@@ -47,6 +47,19 @@ The server will serve `web/dist` in production (see `server/index.js` line 31–
 cd server && npm run seed   # re-seeds demo users, products, check-ins, photos
 ```
 
+## Images
+
+All imagery is local and filename-addressed:
+
+- `web/public/products/<slug>.jpg` — 13 product cards. Use square 1:1 so every crop is consistent.
+- `web/public/avatars/<name>.jpg` — optional customer portraits. The UI falls back to a monogram.
+- `web/public/progress/crown-week-0X.jpg` — demo progress frames.
+- `web/public/videos/` — hero films and their posters.
+
+Ready-to-paste Gemini prompts, exact filenames and aspect ratios live in
+[IMAGE_PROMPTS.md](IMAGE_PROMPTS.md). A missing file returns a 404 and degrades
+to the branded fallback instead of a broken image.
+
 ## Demo Credentials
 | Role | Email | Password | Notes |
 |------|-------|----------|-------|

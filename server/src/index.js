@@ -35,6 +35,10 @@ if (fs.existsSync(webDist)) {
   app.use(express.static(webDist, { maxAge: '1h', index: false }));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
+    // Missing files must 404 instead of receiving the SPA shell. An <img> that
+    // gets HTML with a 200 never fires onError, so the branded image fallbacks
+    // would silently never appear.
+    if (/\.[a-z0-9]{2,5}$/i.test(req.path)) return res.status(404).type('text').send('Not found');
     res.sendFile(path.join(webDist, 'index.html'));
   });
 }

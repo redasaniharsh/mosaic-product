@@ -4,6 +4,8 @@ dist/
 server/.env
 server/data/*.db
 server/data/*.db-journal
+server/data/*.db-shm
+server/data/*.db-wal
 server/uploads/
 *.png
 *.jpg
@@ -16,6 +18,9 @@ server/uploads/
 # Hero product films (mp4) and their poster frames ship too.
 !web/public/videos/
 !web/public/videos/*.jpg
+# Demo progress frames and optional customer portraits ship with the app.
+!web/public/progress/*.jpg
+!web/public/avatars/*.jpg
 .DS_Store
 *.log
 docs/*.docx
