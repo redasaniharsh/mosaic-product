@@ -15,6 +15,8 @@
     "build": "npm --prefix web run build",
     "images": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-images.ps1",
     "images:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-images.ps1 -Build",
+    "art": "node scripts/make-art.mjs && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/render-art.ps1",
+    "art:build": "node scripts/make-art.mjs && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/render-art.ps1 -Build",
     "start": "npm --prefix server start",
     "seed": "npm --prefix server run seed",
     "doc": "node scripts/build-doc.mjs"
