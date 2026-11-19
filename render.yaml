@@ -11,7 +11,7 @@ services:
       cd ../web && npm run build   # tsc -b && vite build
     startCommand: |
       cd server && node src/index.js
-    # Port Express will use (default 4000)
+    # Express defaults to 3000 locally; Render sets its own port explicitly.
     envVars:
       # Values are entered in the Render dashboard (sync: false keeps them out of git).
       # Canonical names:

@@ -31,8 +31,9 @@ COPY --from=builder /app/web/dist ./web/dist
 WORKDIR /app/server
 RUN npm ci --production 2>/dev/null || npm install --production 2>/dev/null || true
 
-# Expose API port
-EXPOSE 4000
+# Single Express process serves the API and the built SPA on port 3000.
+ENV PORT=3000
+EXPOSE 3000
 
 # Start the Express server (serves web/dist in production)
 CMD ["node", "src/index.js"]

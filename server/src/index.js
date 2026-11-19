@@ -50,8 +50,8 @@ app.use((err, _req, res, _next) => {
 
 await ensureSeeded();
 
-app.listen(PORT, () => {
-  console.log(`\n  Man Matters Companion API → http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n  Man Matters Companion → http://0.0.0.0:${PORT}`);
   const chain = providers().map((p) => `${p.kind}:${p.label}`);
   console.log(`  AI chain: ${chain.length ? chain.join(' → ') : 'rules only'} → rules`);
   console.log(`  Web: ${fs.existsSync(webDist) ? webDist : 'run npm run dev:web for the Vite dev server'}\n`);

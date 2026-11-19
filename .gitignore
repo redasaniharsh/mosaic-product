@@ -24,6 +24,8 @@ server/uploads/
 # Raw image-generator exports; the importer writes final files into web/public.
 image-drop/*
 !image-drop/README.md
+# Local API keys for image generation; never commit.
+.secrets/
 .DS_Store
 *.log
 docs/*.docx
